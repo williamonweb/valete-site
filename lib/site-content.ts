@@ -1,5 +1,5 @@
 export type Member = { id:string; name:string; role:string; bio:string; imageUrl:string; iconUrl:string; instagramUrl:string };
-export type Show = { id:string; date:string; place:string; city:string; note:string; status:"past"|"upcoming" };
+export type Show = { id:string; date:string; dateIso:string; time:string; place:string; city:string; note:string; status:"past"|"upcoming" };
 export type MusicVideo = { id:string; title:string; url:string };
 export type AlbumPhoto = { id:string; url:string; caption:string };
 export type PhotoAlbum = { id:string; title:string; description:string; coverUrl:string; photos:AlbumPhoto[] };
@@ -24,9 +24,9 @@ export const defaultContent:SiteContent = {
     {id:"rodrigo",name:"RODRIGO",role:"Bateria",bio:"Biografia em breve.",imageUrl:"",iconUrl:"",instagramUrl:""},
   ],
   shows:[
-    {id:"maverick",date:"19 SETEMBRO",place:"Bilhar do Nando",city:"Cachoeirinha - RS",note:"",status:"upcoming"},
-    {id:"taberna",date:"24 SETEMBRO",place:"Confraria das Máquinas",city:"Gravataí - RS",note:"",status:"upcoming"},
-    {id:"itapua",date:"25 SETEMBRO",place:"Taberna Velho Oeste",city:"Sapucaia do Sul - RS",note:"",status:"upcoming"},
+    {id:"maverick",date:"19 SETEMBRO",dateIso:"2026-09-19",time:"",place:"Bilhar do Nando",city:"Cachoeirinha - RS",note:"",status:"upcoming"},
+    {id:"taberna",date:"24 SETEMBRO",dateIso:"2026-09-24",time:"",place:"Confraria das Máquinas",city:"Gravataí - RS",note:"",status:"upcoming"},
+    {id:"itapua",date:"25 SETEMBRO",dateIso:"2026-09-25",time:"",place:"Taberna Velho Oeste",city:"Sapucaia do Sul - RS",note:"",status:"upcoming"},
   ],
   music:{label:"AUTORAL",title:"ENTRE O CÉU E O CAOS",description:"Rock sentimental, estrada e intensidade. Uma música que carrega a fase atual da Valete.",repertoire:"POP ROCK NACIONAL · ROCK DOS ANOS 2000 · CLÁSSICOS INTERNACIONAIS · CRAZY TRAIN E MAIS"},
   videos:[{id:"outro-lugar",title:"Outro Lugar",url:"https://www.youtube.com/watch?v=XgY4Xh4hhDU"}],
@@ -45,7 +45,7 @@ export function normalizeContent(value:unknown):SiteContent {
     brand,
     about:{...defaultContent.about,...v.about},
     members:Array.isArray(v.members)?v.members.map(member=>({...member,iconUrl:member.iconUrl||"",instagramUrl:member.instagramUrl||""})):defaultContent.members,
-    shows:Array.isArray(v.shows)?v.shows:defaultContent.shows,
+    shows:Array.isArray(v.shows)?v.shows.map(show=>({...show,dateIso:show.dateIso||"",time:show.time||""})):defaultContent.shows,
     music:{
       label:incomingMusic?.label??defaultContent.music.label,
       title:incomingMusic?.title??defaultContent.music.title,
@@ -61,4 +61,22 @@ export function normalizeContent(value:unknown):SiteContent {
     })):defaultContent.albums,
     contact:{...defaultContent.contact,...v.contact},
   };
+}
+
+function saoPauloDateKey(date=new Date()){
+  const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(date);
+  const values=Object.fromEntries(parts.map(part=>[part.type,part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function showStatus(show:Show){
+  return show.dateIso?(show.dateIso<saoPauloDateKey()?"past":"upcoming"):show.status;
+}
+
+export function showDateLabel(show:Show){
+  if(!show.dateIso)return show.date;
+  const [year,month,day]=show.dateIso.split("-").map(Number);
+  if(!year||!month||!day)return show.date;
+  const label=new Intl.DateTimeFormat("pt-BR",{day:"2-digit",month:"long",timeZone:"America/Sao_Paulo"}).format(new Date(Date.UTC(year,month-1,day,12)));
+  return label.replace(" de "," ").toLocaleUpperCase("pt-BR");
 }

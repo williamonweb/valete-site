@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-import { defaultContent, SiteContent } from "@/lib/site-content";
+import { defaultContent, Show, showDateLabel, showStatus, SiteContent } from "@/lib/site-content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from "@/components/ui/select";
+import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle } from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { Bell, Check, Mail, Phone } from "lucide-react";
+import { Bell, CalendarDays, CalendarPlus, Check, Clock, Mail, MapPin, Phone } from "lucide-react";
 
 const sections=[["geral","Geral"],["integrantes","Integrantes"],["agenda","Agenda"],["musica","Música"],["videos","Vídeos"],["fotos","Fotos"],["mensagens","Contatos"],["contato","Config. contato"]];
 type Lead={id:number;name:string;phone:string;email:string;message:string;isRead:number;createdAt:string};
@@ -18,6 +18,8 @@ export default function CmsClient({userName}:{userName:string}){
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [leads,setLeads]=useState<Lead[]>([]);
+  const [showModalOpen,setShowModalOpen]=useState(false);
+  const [newShow,setNewShow]=useState<Show>(()=>newShowDraft());
   useEffect(()=>{
     const refreshLeads=()=>fetch("/api/leads").then(r=>{if(!r.ok)throw new Error();return r.json();}).then(v=>setLeads(v.leads||[]));
     Promise.all([fetch("/api/content").then(r=>r.json()).then(v=>setData(v)),refreshLeads()])
@@ -26,7 +28,20 @@ export default function CmsClient({userName}:{userName:string}){
     return()=>window.clearInterval(timer);
   },[]);
   const unread=leads.filter(lead=>!lead.isRead).length;
+  const indexedShows=data.shows.map((show,index)=>({show,index}));
+  const upcomingShows=indexedShows.filter(({show})=>showStatus(show)==="upcoming").sort((a,b)=>(a.show.dateIso||"9999-99-99").localeCompare(b.show.dateIso||"9999-99-99"));
+  const pastShows=indexedShows.filter(({show})=>showStatus(show)==="past").sort((a,b)=>(b.show.dateIso||"").localeCompare(a.show.dateIso||""));
   const update=<K extends keyof SiteContent>(key:K,value:SiteContent[K])=>setData({...data,[key]:value});
+  const addShow=()=>{
+    if(!newShow.dateIso||!newShow.place.trim()||!newShow.city.trim()){
+      toast.error("Preencha a data, o local e a cidade do show.");
+      return;
+    }
+    update("shows",[...data.shows,{...newShow,id:crypto.randomUUID(),date:showDateLabel(newShow),place:newShow.place.trim(),city:newShow.city.trim(),note:newShow.note.trim()}]);
+    setNewShow(newShowDraft());
+    setShowModalOpen(false);
+    toast.success("Data adicionada. Clique em Salvar alterações para publicar.");
+  };
   const save=async()=>{
     setSaving(true);
     try{
@@ -106,13 +121,31 @@ export default function CmsClient({userName}:{userName:string}){
         </div>
       </Editor>)}</div>}
 
-      {active==="agenda"&&<div className="cms-stack">
-        {data.shows.map((show,index)=><Editor key={show.id} title={show.place||"Novo show"}>
-          <div className="show-editor"><Field label="Data"><Input value={show.date} onChange={e=>{const shows=[...data.shows];shows[index]={...show,date:e.target.value};update("shows",shows);}}/></Field><Field label="Local"><Input value={show.place} onChange={e=>{const shows=[...data.shows];shows[index]={...show,place:e.target.value};update("shows",shows);}}/></Field><Field label="Cidade"><Input value={show.city} onChange={e=>{const shows=[...data.shows];shows[index]={...show,city:e.target.value};update("shows",shows);}}/></Field><Field label="Destaque"><Input value={show.note} onChange={e=>{const shows=[...data.shows];shows[index]={...show,note:e.target.value};update("shows",shows);}}/></Field><Field label="Situação"><Select value={show.status} onValueChange={(value:"past"|"upcoming")=>{const shows=[...data.shows];shows[index]={...show,status:value};update("shows",shows);}}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="upcoming">Próximo show</SelectItem><SelectItem value="past">Show realizado</SelectItem></SelectContent></Select></Field></div>
-          <Button variant="destructive" onClick={()=>update("shows",data.shows.filter((_,i)=>i!==index))}>Excluir show</Button>
-        </Editor>)}
-        <Button className="add-button" onClick={()=>update("shows",[...data.shows,{id:crypto.randomUUID(),date:"",place:"Novo show",city:"",note:"",status:"upcoming"}])}>+ ADICIONAR SHOW</Button>
-      </div>}
+      {active==="agenda"&&<section className="cms-agenda">
+        <div className="agenda-cms-hero">
+          <div><small>AGENDA DA BANDA</small><h2>Datas e apresentações</h2><p>Cadastre os próximos shows. Depois da data, o evento vai sozinho para Últimos shows.</p></div>
+          <Button className="add-button agenda-add" type="button" onClick={()=>setShowModalOpen(true)}><CalendarPlus size={18}/> CADASTRAR NOVA DATA</Button>
+        </div>
+        <div className="agenda-summary-grid">
+          <article><CalendarDays/><div><strong>{upcomingShows.length}</strong><span>{upcomingShows.length===1?"próximo show":"próximos shows"}</span></div></article>
+          <article><Clock/><div><strong>{pastShows.length}</strong><span>{pastShows.length===1?"show arquivado":"shows arquivados"}</span></div></article>
+        </div>
+        <CmsShowGroup title="PRÓXIMOS SHOWS" empty="Nenhuma data futura cadastrada." items={upcomingShows} data={data} update={update}/>
+        <CmsShowGroup title="ÚLTIMOS SHOWS" empty="Os shows realizados aparecerão aqui automaticamente." items={pastShows} data={data} update={update}/>
+        <Dialog open={showModalOpen} onOpenChange={setShowModalOpen}>
+          <DialogContent className="show-create-modal">
+            <DialogHeader><small>NOVA APRESENTAÇÃO</small><DialogTitle>Cadastrar uma data</DialogTitle><DialogDescription>Preencha as informações que aparecerão na agenda do site.</DialogDescription></DialogHeader>
+            <div className="show-create-fields">
+              <Field label="Data do show *"><Input type="date" value={newShow.dateIso} onChange={e=>setNewShow({...newShow,dateIso:e.target.value})}/></Field>
+              <Field label="Horário"><Input type="time" value={newShow.time} onChange={e=>setNewShow({...newShow,time:e.target.value})}/></Field>
+              <Field label="Local *"><Input autoFocus placeholder="Ex.: Bilhar do Nando" value={newShow.place} onChange={e=>setNewShow({...newShow,place:e.target.value})}/></Field>
+              <Field label="Cidade *"><Input placeholder="Ex.: Cachoeirinha - RS" value={newShow.city} onChange={e=>setNewShow({...newShow,city:e.target.value})}/></Field>
+              <Field label="Destaque ou informação"><Input placeholder="Ex.: Entrada gratuita" value={newShow.note} onChange={e=>setNewShow({...newShow,note:e.target.value})}/></Field>
+            </div>
+            <DialogFooter><Button type="button" variant="outline" onClick={()=>setShowModalOpen(false)}>Cancelar</Button><Button className="add-button" type="button" onClick={addShow}>ADICIONAR À AGENDA</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </section>}
 
       {active==="musica"&&<Editor title="Destaque musical"><Field label="Tipo"><Input value={data.music.label} onChange={e=>update("music",{...data.music,label:e.target.value})}/></Field><Field label="Título"><Input value={data.music.title} onChange={e=>update("music",{...data.music,title:e.target.value})}/></Field><Field label="Descrição"><Textarea rows={4} value={data.music.description} onChange={e=>update("music",{...data.music,description:e.target.value})}/></Field><Field label="Repertório"><Textarea rows={4} value={data.music.repertoire} onChange={e=>update("music",{...data.music,repertoire:e.target.value})}/></Field></Editor>}
 
@@ -140,6 +173,27 @@ export default function CmsClient({userName}:{userName:string}){
       {active==="contato"&&<Editor title="Contratação"><Field label="Título"><Input value={data.contact.heading} onChange={e=>update("contact",{...data.contact,heading:e.target.value})}/></Field><Field label="Texto"><Textarea rows={4} value={data.contact.text} onChange={e=>update("contact",{...data.contact,text:e.target.value})}/></Field><Field label="Link completo do WhatsApp"><Input placeholder="https://wa.me/55..." value={data.contact.whatsapp} onChange={e=>update("contact",{...data.contact,whatsapp:e.target.value})}/></Field><Field label="Link completo do Instagram"><Input placeholder="https://instagram.com/..." value={data.contact.instagram} onChange={e=>update("contact",{...data.contact,instagram:e.target.value})}/></Field></Editor>}
     </section>
   </main>;
+}
+
+function newShowDraft():Show{return {id:"",date:"",dateIso:"",time:"",place:"",city:"",note:"",status:"upcoming"};}
+
+function CmsShowGroup({title,empty,items,data,update}:{title:string;empty:string;items:{show:Show;index:number}[];data:SiteContent;update:(key:"shows",value:Show[])=>void}){
+  return <section className="cms-show-group">
+    <header><h3>{title}</h3><span>{items.length}</span></header>
+    {!items.length&&<p className="cms-show-empty">{empty}</p>}
+    <div className="cms-show-list">{items.map(({show,index})=><article className="cms-show-card" key={show.id}>
+      <div className="cms-show-date"><CalendarDays/><strong>{showDateLabel(show)||"SEM DATA"}</strong>{show.time&&<span>{show.time}</span>}</div>
+      <div className="cms-show-place"><small>{showStatus(show)==="past"?"ARQUIVADO AUTOMATICAMENTE":"PRÓXIMA APRESENTAÇÃO"}</small><h4>{show.place||"Local não informado"}</h4><p><MapPin size={14}/>{show.city||"Cidade não informada"}</p>{!show.dateIso&&<em>Defina a data abaixo para ativar o arquivamento automático.</em>}</div>
+      <div className="cms-show-edit">
+        <Field label="Data"><Input type="date" value={show.dateIso} onChange={e=>{const shows=[...data.shows];shows[index]={...show,dateIso:e.target.value};update("shows",shows);}}/></Field>
+        <Field label="Horário"><Input type="time" value={show.time} onChange={e=>{const shows=[...data.shows];shows[index]={...show,time:e.target.value};update("shows",shows);}}/></Field>
+        <Field label="Local"><Input value={show.place} onChange={e=>{const shows=[...data.shows];shows[index]={...show,place:e.target.value};update("shows",shows);}}/></Field>
+        <Field label="Cidade"><Input value={show.city} onChange={e=>{const shows=[...data.shows];shows[index]={...show,city:e.target.value};update("shows",shows);}}/></Field>
+        <Field label="Destaque"><Input value={show.note} onChange={e=>{const shows=[...data.shows];shows[index]={...show,note:e.target.value};update("shows",shows);}}/></Field>
+        <Button type="button" variant="destructive" onClick={()=>update("shows",data.shows.filter((_,i)=>i!==index))}>Excluir show</Button>
+      </div>
+    </article>)}</div>
+  </section>;
 }
 
 function Editor({title,children,wide=false}:{title:string;children:React.ReactNode;wide?:boolean}){return <section className={wide?"cms-editor wide":"cms-editor"}><h2>{title}</h2>{children}</section>;}
