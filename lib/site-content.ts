@@ -19,7 +19,7 @@ export type SiteContent = {
 
 export const defaultContent:SiteContent = {
   brand:{ logoUrl:"/valete-logo-cropped.png", tagline:"ROCK N’ ROLL É NOSSO COMPROMISSO.", city:"GRAVATAÍ · RIO GRANDE DO SUL", accentColor:"#c49a52", heroImageUrl:"/uploads/hero.png", aboutBannerUrl:"", agendaBannerUrl:"", musicBannerUrl:"", videosBannerUrl:"", photosBannerUrl:"", contactBannerUrl:"", merchBannerUrl:"", heroTitle:"O ROCK NÃO PEDE LICENÇA.", heroText:"Duas guitarras. Baixo. Bateria. Uma noite para cantar alto." },
-  about:{ heading:"QUATRO MÚSICOS. UMA NOITE INTEIRA DE ROCK.", text:"A Valete nasceu em Gravataí para levar ao palco o rock que marcou uma geração — das guitarras dos anos 2000 aos clássicos que pedem volume alto." },
+  about:{ heading:"A BANDA", text:"A Valete nasceu em Gravataí para levar ao palco o rock que marcou uma geração — das guitarras dos anos 2000 aos clássicos que pedem volume alto." },
   members:[
     {id:"william",name:"WILLIAM",role:"Voz · Guitarra base",bio:"Biografia em breve.",imageUrl:"/uploads/william.png",iconUrl:"",instagramUrl:"",favoriteBand:"",inspirations:"",hobby:"",favoriteSong:""},
     {id:"maicon",name:"MAICON",role:"Guitarra",bio:"Biografia em breve.",imageUrl:"/uploads/maicon.jpg",iconUrl:"",instagramUrl:"",favoriteBand:"",inspirations:"",hobby:"",favoriteSong:""},
