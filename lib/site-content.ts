@@ -1,5 +1,5 @@
 export type Member = { id:string; name:string; role:string; bio:string; imageUrl:string; iconUrl:string; instagramUrl:string };
-export type Show = { id:string; date:string; dateIso:string; time:string; place:string; city:string; note:string; coverUrl:string; status:"past"|"upcoming" };
+export type Show = { id:string; date:string; dateIso:string; time:string; place:string; city:string; note:string; coverUrl:string; linkUrl:string; linkLabel:string; status:"past"|"upcoming" };
 export type MusicVideo = { id:string; title:string; url:string };
 export type MusicTrack = { id:string; title:string; artist:string; coverUrl:string; url:string };
 export type AlbumPhoto = { id:string; url:string; caption:string };
@@ -25,9 +25,9 @@ export const defaultContent:SiteContent = {
     {id:"rodrigo",name:"RODRIGO",role:"Bateria",bio:"Biografia em breve.",imageUrl:"",iconUrl:"",instagramUrl:""},
   ],
   shows:[
-    {id:"maverick",date:"19 SETEMBRO",dateIso:"2026-09-19",time:"",place:"Bilhar do Nando",city:"Cachoeirinha - RS",note:"",coverUrl:"",status:"upcoming"},
-    {id:"taberna",date:"24 SETEMBRO",dateIso:"2026-09-24",time:"",place:"Confraria das Máquinas",city:"Gravataí - RS",note:"",coverUrl:"",status:"upcoming"},
-    {id:"itapua",date:"25 SETEMBRO",dateIso:"2026-09-25",time:"",place:"Taberna Velho Oeste",city:"Sapucaia do Sul - RS",note:"",coverUrl:"",status:"upcoming"},
+    {id:"maverick",date:"19 SETEMBRO",dateIso:"2026-09-19",time:"",place:"Bilhar do Nando",city:"Cachoeirinha - RS",note:"",coverUrl:"",linkUrl:"",linkLabel:"",status:"upcoming"},
+    {id:"taberna",date:"24 SETEMBRO",dateIso:"2026-09-24",time:"",place:"Confraria das Máquinas",city:"Gravataí - RS",note:"",coverUrl:"",linkUrl:"",linkLabel:"",status:"upcoming"},
+    {id:"itapua",date:"25 SETEMBRO",dateIso:"2026-09-25",time:"",place:"Taberna Velho Oeste",city:"Sapucaia do Sul - RS",note:"",coverUrl:"",linkUrl:"",linkLabel:"",status:"upcoming"},
   ],
   music:{label:"AUTORAL",title:"MÚSICAS DA VALETE",description:"Rock sentimental, estrada e intensidade. Ouça as músicas próprias da Valete.",repertoire:"POP ROCK NACIONAL · ROCK DOS ANOS 2000 · CLÁSSICOS INTERNACIONAIS · CRAZY TRAIN E MAIS",tracks:[{id:"entre-o-ceu-e-o-caos",title:"ENTRE O CÉU E O CAOS",artist:"Valete",coverUrl:"",url:""}]},
   videos:[{id:"outro-lugar",title:"Outro Lugar",url:"https://www.youtube.com/watch?v=XgY4Xh4hhDU"}],
@@ -46,7 +46,7 @@ export function normalizeContent(value:unknown):SiteContent {
     brand,
     about:{...defaultContent.about,...v.about},
     members:Array.isArray(v.members)?v.members.map(member=>({...member,iconUrl:member.iconUrl||"",instagramUrl:member.instagramUrl||""})):defaultContent.members,
-    shows:Array.isArray(v.shows)?v.shows.map(show=>({...show,dateIso:show.dateIso||"",time:show.time||"",coverUrl:show.coverUrl||""})):defaultContent.shows,
+    shows:Array.isArray(v.shows)?v.shows.map(show=>({...show,dateIso:show.dateIso||"",time:show.time||"",coverUrl:show.coverUrl||"",linkUrl:show.linkUrl||"",linkLabel:show.linkLabel||""})):defaultContent.shows,
     music:{
       label:incomingMusic?.label??defaultContent.music.label,
       title:incomingMusic?.title??defaultContent.music.title,
