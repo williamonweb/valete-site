@@ -1,15 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
-import { defaultContent, MusicTrack, Show, showDateLabel, showStatus, SiteContent } from "@/lib/site-content";
+import { defaultContent, MerchItem, MusicTrack, Show, showDateLabel, showStatus, SiteContent } from "@/lib/site-content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle } from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { Bell, CalendarDays, CalendarPlus, Check, Clock, Disc3, Mail, MapPin, Pencil, Phone, Plus, Trash2 } from "lucide-react";
+import { Bell, CalendarDays, CalendarPlus, Check, Clock, Disc3, Mail, MapPin, Pencil, Phone, Plus, Shirt, Trash2 } from "lucide-react";
 
-const sections=[["geral","Geral"],["integrantes","Integrantes"],["agenda","Agenda"],["musica","Música"],["videos","Vídeos"],["fotos","Fotos"],["mensagens","Contatos"],["contato","Config. contato"]];
+const sections=[["geral","Geral"],["integrantes","Integrantes"],["agenda","Agenda"],["musica","Música"],["videos","Vídeos"],["fotos","Fotos"],["camisetas","Camisetas"],["mensagens","Contatos"],["contato","Config. contato"]];
 type Lead={id:number;name:string;phone:string;email:string;message:string;isRead:number;createdAt:string};
 
 export default function CmsClient({userName}:{userName:string}){
@@ -24,6 +24,9 @@ export default function CmsClient({userName}:{userName:string}){
   const [trackModalOpen,setTrackModalOpen]=useState(false);
   const [editingTrackIndex,setEditingTrackIndex]=useState<number|null>(null);
   const [trackDraft,setTrackDraft]=useState<MusicTrack>(()=>newTrackDraft());
+  const [merchModalOpen,setMerchModalOpen]=useState(false);
+  const [editingMerchIndex,setEditingMerchIndex]=useState<number|null>(null);
+  const [merchDraft,setMerchDraft]=useState<MerchItem>(()=>newMerchDraft());
   useEffect(()=>{
     const refreshLeads=()=>fetch("/api/leads").then(r=>{if(!r.ok)throw new Error();return r.json();}).then(v=>setLeads(v.leads||[]));
     Promise.all([fetch("/api/content").then(r=>r.json()).then(v=>setData(v)),refreshLeads()])
@@ -63,6 +66,15 @@ export default function CmsClient({userName}:{userName:string}){
     update("music",{...data.music,tracks});
     setTrackModalOpen(false);setEditingTrackIndex(null);setTrackDraft(newTrackDraft());
     toast.success("Música adicionada. Clique em Salvar alterações para publicar.");
+  };
+  const openNewMerch=()=>{setEditingMerchIndex(null);setMerchDraft(newMerchDraft());setMerchModalOpen(true);};
+  const openEditMerch=(index:number)=>{setEditingMerchIndex(index);setMerchDraft({...data.merch[index],colors:[...data.merch[index].colors],sizes:[...data.merch[index].sizes]});setMerchModalOpen(true);};
+  const saveMerchDraft=()=>{
+    if(!merchDraft.name.trim()){toast.error("Informe o nome da camiseta.");return;}
+    if(!merchDraft.colors.length||!merchDraft.sizes.length){toast.error("Informe ao menos uma cor e um tamanho.");return;}
+    const item={...merchDraft,id:merchDraft.id||crypto.randomUUID(),name:merchDraft.name.trim(),description:merchDraft.description.trim(),priceLabel:merchDraft.priceLabel.trim(),colors:merchDraft.colors.filter(Boolean),sizes:merchDraft.sizes.filter(Boolean)};
+    const merch=[...data.merch];if(editingMerchIndex===null)merch.push(item);else merch[editingMerchIndex]=item;
+    update("merch",merch);setMerchModalOpen(false);setEditingMerchIndex(null);setMerchDraft(newMerchDraft());toast.success("Camiseta atualizada. Clique em Salvar alterações para publicar.");
   };
   const save=async()=>{
     setSaving(true);
@@ -140,6 +152,12 @@ export default function CmsClient({userName}:{userName:string}){
           <Field label="Função"><Input value={member.role} onChange={e=>{const members=[...data.members];members[index]={...member,role:e.target.value};update("members",members);}}/></Field>
           <Field label="Instagram do integrante"><Input placeholder="https://instagram.com/usuario" value={member.instagramUrl} onChange={e=>{const members=[...data.members];members[index]={...member,instagramUrl:e.target.value};update("members",members);}}/></Field>
           <Field label="Biografia"><Textarea rows={7} value={member.bio} onChange={e=>{const members=[...data.members];members[index]={...member,bio:e.target.value};update("members",members);}}/></Field></div>
+          <div className="col-span-full grid gap-x-5 border-t border-[#333] pt-5 sm:grid-cols-2">
+            <Field label="Banda favorita"><Input placeholder="Ex.: Guns N’ Roses" value={member.favoriteBand} onChange={e=>{const members=[...data.members];members[index]={...member,favoriteBand:e.target.value};update("members",members);}}/></Field>
+            <Field label="Hobby preferido"><Input placeholder="Ex.: Videogame, futebol, motos…" value={member.hobby} onChange={e=>{const members=[...data.members];members[index]={...member,hobby:e.target.value};update("members",members);}}/></Field>
+            <Field label="Bandas e artistas que inspiram"><Input placeholder="Ex.: Alter Bridge, Creed, Angra…" value={member.inspirations} onChange={e=>{const members=[...data.members];members[index]={...member,inspirations:e.target.value};update("members",members);}}/></Field>
+            <Field label="Música que marcou"><Input placeholder="Ex.: Blackbird — Alter Bridge" value={member.favoriteSong} onChange={e=>{const members=[...data.members];members[index]={...member,favoriteSong:e.target.value};update("members",members);}}/></Field>
+          </div>
         </div>
       </Editor>)}</div>}
 
@@ -192,6 +210,27 @@ export default function CmsClient({userName}:{userName:string}){
         <Button className="add-button" onClick={()=>update("albums",[...data.albums,{id:crypto.randomUUID(),title:"Novo álbum",description:"",coverUrl:"",photos:[]}])}>+ CRIAR ÁLBUM</Button>
       </div>}
 
+      {active==="camisetas"&&<section className="space-y-7">
+        <div className="grid items-center gap-6 border border-[#4b402e] bg-[linear-gradient(120deg,#211b13,#111_62%)] p-6 shadow-[inset_4px_0_0_#c49a52] md:grid-cols-[minmax(0,1fr)_auto] md:p-8">
+          <div><small className="font-black tracking-[.18em] text-[#c49a52]">VITRINE DA VALETE</small><h2 className="mt-2 text-3xl font-black tracking-[-.045em] text-white">Camisetas da banda</h2><p className="mt-2 max-w-2xl leading-6 text-[#969696]">Cadastre modelos, fotos, cores e tamanhos. O cliente escolhe no site e o interesse chega em Contatos.</p></div>
+          <Button className="add-button !h-12 !w-full gap-2 px-5 md:!w-auto" type="button" onClick={openNewMerch}><Plus size={18}/> NOVA CAMISETA</Button>
+        </div>
+        {data.merch.length?<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{data.merch.map((item,index)=><article className="overflow-hidden border border-[#333] bg-[#141414]" key={item.id}>
+          <div className="relative aspect-[4/3] overflow-hidden bg-[linear-gradient(145deg,#282116,#080808)]">{item.imageUrl?<img className="absolute inset-0 h-full w-full object-cover" src={item.imageUrl} alt={item.name}/>:<div className="grid h-full place-items-center text-[#c49a52]"><div className="text-center"><Shirt className="mx-auto mb-3 size-12"/><strong className="text-sm tracking-[.16em]">FOTO DA CAMISETA</strong></div></div>}</div>
+          <div className="p-5"><small className="font-black tracking-[.13em] text-[#c49a52]">{item.priceLabel||"CONSULTE"}</small><h3 className="my-2 text-xl font-black text-white">{item.name}</h3><p className="line-clamp-2 text-sm leading-6 text-[#858585]">{item.description||"Sem descrição."}</p><div className="mt-4 flex flex-wrap gap-2">{item.sizes.map(size=><span className="border border-[#3b3b3b] px-2 py-1 text-xs font-black text-[#aaa]" key={size}>{size}</span>)}</div><div className="mt-5 flex gap-2"><Button className="!h-10 flex-1 gap-2 !border-[#555] !bg-transparent !text-white" variant="outline" type="button" onClick={()=>openEditMerch(index)}><Pencil size={15}/> Editar</Button><Button className="!size-10 !p-0" variant="destructive" type="button" aria-label={`Excluir ${item.name}`} onClick={()=>update("merch",data.merch.filter((_,i)=>i!==index))}><Trash2 size={16}/></Button></div></div>
+        </article>)}</div>:<div className="grid min-h-64 place-items-center border border-dashed border-[#393939] text-center text-[#666]"><div><Shirt className="mx-auto mb-3 size-10 text-[#c49a52]"/><p>Nenhuma camiseta cadastrada.</p></div></div>}
+        <Dialog open={merchModalOpen} onOpenChange={setMerchModalOpen}><DialogContent className="!w-[min(680px,calc(100vw-30px))] !max-w-none !gap-0 !rounded-none !border-[#514631] !bg-[#101010] !p-0 !text-white"><DialogHeader className="border-b border-[#303030] px-6 py-6 pr-14 sm:px-8"><small className="font-black tracking-[.17em] text-[#c49a52]">{editingMerchIndex===null?"NOVO MODELO":"EDITAR MODELO"}</small><DialogTitle className="mt-2 text-3xl font-black tracking-[-.04em] text-white">Camiseta Valete</DialogTitle><DialogDescription className="mt-1 text-[#858585]">Configure como este modelo aparecerá na vitrine.</DialogDescription></DialogHeader>
+          <div className="grid gap-4 px-6 py-6 sm:grid-cols-2 sm:px-8 [&_.cms-field]:!m-0 [&_input]:!h-11 [&_input]:!border-[#3d3d3d] [&_input]:!bg-[#090909] [&_input]:!text-white [&_textarea]:!border-[#3d3d3d] [&_textarea]:!bg-[#090909] [&_textarea]:!text-white">
+            <div className="sm:col-span-2"><Field label="Nome do modelo *"><Input autoFocus placeholder="Ex.: Camiseta Valete Clássica" value={merchDraft.name} onChange={e=>setMerchDraft({...merchDraft,name:e.target.value})}/></Field></div>
+            <div className="sm:col-span-2"><Field label="Descrição"><Textarea rows={3} placeholder="Detalhes da estampa e do tecido." value={merchDraft.description} onChange={e=>setMerchDraft({...merchDraft,description:e.target.value})}/></Field></div>
+            <Field label="Tamanhos (separados por vírgula)"><Input placeholder="P, M, G, GG" value={merchDraft.sizes.join(", ")} onChange={e=>setMerchDraft({...merchDraft,sizes:e.target.value.split(",").map(v=>v.trim()).filter(Boolean)})}/></Field>
+            <Field label="Cores (separadas por vírgula)"><Input placeholder="Preta, Branca" value={merchDraft.colors.join(", ")} onChange={e=>setMerchDraft({...merchDraft,colors:e.target.value.split(",").map(v=>v.trim()).filter(Boolean)})}/></Field>
+            <div className="sm:col-span-2"><Field label="Preço ou informação"><Input placeholder="Ex.: R$ 69,90 ou Consulte disponibilidade" value={merchDraft.priceLabel} onChange={e=>setMerchDraft({...merchDraft,priceLabel:e.target.value})}/></Field></div>
+            <div className="sm:col-span-2"><Field label="Foto da camiseta"><div className="grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)]"><div className="grid aspect-[4/3] place-items-center overflow-hidden border border-[#393939] bg-[#080808] text-[#c49a52]">{merchDraft.imageUrl?<img className="h-full w-full object-cover" src={merchDraft.imageUrl} alt="Camiseta"/>:<Shirt size={42}/>}</div><div className="flex flex-col justify-center gap-2"><Input className="!h-auto py-2 file:mr-3 file:text-[#c49a52]" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const file=e.target.files?.[0];if(file)upload(file,url=>setMerchDraft(current=>({...current,imageUrl:url})));}}/>{merchDraft.imageUrl&&<Button className="!h-9 !border-[#4a3535] !bg-transparent !text-[#d48c83]" type="button" variant="outline" onClick={()=>setMerchDraft({...merchDraft,imageUrl:""})}>Remover foto</Button>}</div></div></Field></div>
+          </div><DialogFooter className="border-t border-[#303030] bg-[#0b0b0b] px-6 py-5 sm:px-8"><Button className="!border-[#444] !bg-transparent !text-[#aaa]" type="button" variant="outline" onClick={()=>setMerchModalOpen(false)}>Cancelar</Button><Button className="add-button !min-h-11" type="button" onClick={saveMerchDraft}>{editingMerchIndex===null?"ADICIONAR CAMISETA":"SALVAR EDIÇÃO"}</Button></DialogFooter>
+        </DialogContent></Dialog>
+      </section>}
+
       {active==="mensagens"&&<section className="lead-inbox">
         <div className="lead-inbox-intro"><div><small>CAIXA DE ENTRADA</small><h2>Pedidos recebidos pelo site</h2></div><p>Os contatos mais recentes aparecem primeiro. Marque como lido depois que responder.</p></div>
         {leads.length?<div className="lead-list">{leads.map(lead=><article key={lead.id} className={lead.isRead?"lead-card":"lead-card unread"}>
@@ -208,6 +247,7 @@ export default function CmsClient({userName}:{userName:string}){
 
 function newShowDraft():Show{return {id:"",date:"",dateIso:"",time:"",place:"",city:"",note:"",coverUrl:"",linkUrl:"",linkLabel:"",status:"upcoming"};}
 function newTrackDraft():MusicTrack{return {id:"",title:"",artist:"Valete",coverUrl:"",url:""};}
+function newMerchDraft():MerchItem{return {id:"",name:"",description:"",imageUrl:"",priceLabel:"",colors:["Preta"],sizes:["P","M","G","GG"]};}
 
 function CmsShowGroup({title,empty,items,data,update,onEdit}:{title:string;empty:string;items:{show:Show;index:number}[];data:SiteContent;update:(key:"shows",value:Show[])=>void;onEdit:(index:number)=>void}){
   return <section className="space-y-3">
