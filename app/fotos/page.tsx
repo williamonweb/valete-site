@@ -8,7 +8,7 @@ export default function Fotos(){
   const content=useSiteContent();
   return <main className="public-site inner-site" style={{"--accent":content.brand.accentColor} as React.CSSProperties}>
     <PublicHeader content={content}/>
-    <PageHero kicker="06 / REGISTROS" title="FOTOS"/>
+    <PageHero kicker="06 / REGISTROS" title="FOTOS" imageUrl={content.brand.photosBannerUrl}/>
     <section className="albums-route">
       {content.albums.length?<div className="album-grid">{content.albums.map(album=>{
         const cover=album.coverUrl||album.photos[0]?.url;

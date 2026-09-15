@@ -175,10 +175,11 @@ footer p:last-child { text-align:right; }
 @keyframes fadeIn { from{opacity:0}to{opacity:1} }
 
 .inner-site { padding-top:86px; }
-.page-hero { position:relative; min-height:310px; padding:72px 5vw 52px; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; border-bottom:1px solid #303030; background:linear-gradient(135deg,#070707 0%,#111 100%); }
-.page-hero>p { margin:0 0 16px; color:var(--accent); font-size:.78rem; font-weight:950; letter-spacing:.18em; }
-.page-hero h1 { position:relative; z-index:2; max-width:1050px; margin:0; font-size:clamp(2.35rem,4.7vw,5rem); line-height:.92; letter-spacing:-.05em; font-weight:950; text-transform:uppercase; text-wrap:balance; }
-.page-hero>span { position:absolute; right:-1vw; top:20px; color:#101010; font-size:12vw; line-height:1; font-weight:1000; letter-spacing:-.07em; }
+.page-hero { position:relative; min-height:310px; padding:72px 5vw 52px; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; border-bottom:1px solid #303030; background:linear-gradient(135deg,#070707 0%,#111 100%); isolation:isolate; }
+.page-hero.has-banner:after { content:""; position:absolute; z-index:-1; inset:0; background:linear-gradient(90deg,#050505e8 0%,#050505a8 46%,#05050535 82%),linear-gradient(0deg,#050505d9 0%,transparent 70%); }
+.page-hero>img { position:absolute; z-index:-2; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; }
+.page-hero>p { position:relative; z-index:1; margin:0 0 16px; color:var(--accent); font-size:.78rem; font-weight:950; letter-spacing:.18em; }
+.page-hero h1 { position:relative; z-index:2; max-width:1050px; margin:0; font-size:clamp(2.35rem,4.7vw,5rem); line-height:.92; letter-spacing:-.05em; font-weight:950; text-transform:uppercase; text-wrap:balance; text-shadow:0 5px 24px #000; }
 .about-route { padding:60px 5vw 80px; display:flex; justify-content:flex-end; }.about-route p { width:min(820px,78vw); margin:0; font-size:clamp(1.05rem,1.55vw,1.35rem); line-height:1.65; }
 .member-lineup { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); padding:0 3vw 110px; gap:1px; background:#303030; border-block:1px solid #303030; }
 .member-card { min-width:0; padding:0; border:0; background:#080808; color:white; text-align:left; cursor:pointer; overflow:hidden; }

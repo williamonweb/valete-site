@@ -32,6 +32,6 @@ export function PublicFooter({content}:{content:SiteContent}){
   </footer>;
 }
 
-export function PageHero({kicker,title}:{kicker:string;title:string}){
-  return <section className="page-hero"><p>{kicker}</p><h1>{title}</h1><span aria-hidden="true">VALETE</span></section>;
+export function PageHero({kicker,title,imageUrl=""}:{kicker:string;title:string;imageUrl?:string}){
+  return <section className={imageUrl?"page-hero has-banner":"page-hero"}>{imageUrl&&<img src={imageUrl} alt=""/>}<p>{kicker}</p><h1>{title}</h1></section>;
 }

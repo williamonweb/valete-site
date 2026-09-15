@@ -7,10 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle } from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { Bell, CalendarDays, CalendarPlus, Check, Clock, Disc3, Mail, MapPin, Pencil, Phone, Plus, Shirt, Trash2 } from "lucide-react";
+import { Bell, CalendarDays, CalendarPlus, Check, Clock, Disc3, Image as ImageIcon, Mail, MapPin, Pencil, Phone, Plus, Shirt, Trash2 } from "lucide-react";
 
-const sections=[["geral","Geral"],["integrantes","Integrantes"],["agenda","Agenda"],["musica","Música"],["videos","Vídeos"],["fotos","Fotos"],["camisetas","Camisetas"],["mensagens","Contatos"],["contato","Config. contato"]];
+const sections=[["geral","Geral"],["banners","Banners"],["integrantes","Integrantes"],["agenda","Agenda"],["musica","Música"],["videos","Vídeos"],["fotos","Fotos"],["camisetas","Camisetas"],["mensagens","Contatos"],["contato","Config. contato"]];
 type Lead={id:number;name:string;phone:string;email:string;message:string;isRead:number;createdAt:string};
+type BannerKey="heroImageUrl"|"aboutBannerUrl"|"agendaBannerUrl"|"musicBannerUrl"|"videosBannerUrl"|"photosBannerUrl"|"merchBannerUrl"|"contactBannerUrl";
+const bannerOptions:{key:BannerKey;title:string;route:string}[]=[
+  {key:"heroImageUrl",title:"Página inicial",route:"/"},{key:"aboutBannerUrl",title:"A Banda",route:"/banda"},{key:"agendaBannerUrl",title:"Agenda",route:"/agenda"},{key:"musicBannerUrl",title:"Música",route:"/musica"},{key:"videosBannerUrl",title:"Vídeos",route:"/videos"},{key:"photosBannerUrl",title:"Fotos",route:"/fotos"},{key:"merchBannerUrl",title:"Camisetas",route:"/camisetas"},{key:"contactBannerUrl",title:"Contato",route:"/contato"},
+];
 
 async function optimizeImage(file:File){
   const maximumBytes=2.8*1024*1024;
@@ -173,6 +177,12 @@ export default function CmsClient({userName}:{userName:string}){
           <Field label="Texto"><Textarea rows={5} value={data.about.text} onChange={e=>update("about",{...data.about,text:e.target.value})}/></Field>
         </Editor>
       </div>}
+
+      {active==="banners"&&<section className="space-y-7">
+        <div className="border border-[#4b402e] bg-[linear-gradient(120deg,#211b13,#111_62%)] p-6 shadow-[inset_4px_0_0_#c49a52] md:p-8"><small className="font-black tracking-[.18em] text-[#c49a52]">IDENTIDADE DAS PÁGINAS</small><h2 className="mt-2 text-3xl font-black tracking-[-.045em] text-white">Banners do site</h2><p className="mt-2 max-w-3xl leading-6 text-[#969696]">Escolha uma imagem para cada área. Os títulos ficam sobre a foto com proteção escura e sem marcas-d’água adicionadas pelo site.</p></div>
+        <div className="grid gap-5 xl:grid-cols-2">{bannerOptions.map(option=>{const url=data.brand[option.key];return <article className="overflow-hidden border border-[#333] bg-[#151515]" key={option.key}><header className="flex items-center justify-between gap-4 border-b border-[#303030] px-5 py-4"><div><small className="font-black tracking-[.12em] text-[#c49a52]">BANNER</small><h3 className="mt-1 text-lg font-black text-white">{option.title}</h3></div><a className="text-xs font-black text-[#888] hover:text-white" href={option.route} target="_blank" rel="noreferrer">VER PÁGINA ↗</a></header><div className="relative grid aspect-[3/1] min-h-40 place-items-center overflow-hidden bg-[linear-gradient(135deg,#282116,#080808)] text-[#c49a52]">{url?<img className="absolute inset-0 h-full w-full object-cover" src={url} alt={`Banner ${option.title}`}/>:<div className="text-center"><ImageIcon className="mx-auto mb-3 size-9"/><strong className="text-xs tracking-[.14em]">SEM IMAGEM</strong></div>}</div><div className="grid gap-3 p-5 sm:grid-cols-[minmax(0,1fr)_auto]"><Input className="!h-auto border-[#444] bg-[#090909] py-3 text-white file:mr-3 file:text-[#c49a52]" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const file=e.target.files?.[0];if(file)upload(file,imageUrl=>update("brand",{...data.brand,[option.key]:imageUrl}));}}/>{url&&<Button className="!h-auto !border-[#4a3535] !bg-transparent !text-[#d48c83]" type="button" variant="outline" onClick={()=>update("brand",{...data.brand,[option.key]:""})}>Remover</Button>}</div></article>})}</div>
+        <p className="border-l-2 border-[#c49a52] bg-[#16130f] px-5 py-4 text-sm leading-6 text-[#999]">Formato recomendado para os banners internos: <strong className="text-white">1920 × 650 pixels</strong>. Depois de enviar as imagens, clique em <strong className="text-white">Salvar alterações</strong>.</p>
+      </section>}
 
       {active==="integrantes"&&<div className="cms-stack">{data.members.map((member,index)=><Editor key={member.id} title={member.name}>
         <div className="member-editor">

@@ -14,7 +14,7 @@ export default function Agenda() {
 
   return <main className="public-site inner-site" style={{ "--accent": content.brand.accentColor } as React.CSSProperties}>
     <PublicHeader content={content} />
-    <PageHero kicker="02 / NA ESTRADA" title="AGENDA" />
+    <PageHero kicker="02 / NA ESTRADA" title="AGENDA" imageUrl={content.brand.agendaBannerUrl} />
     <section className={styles.route}>
       <header className={styles.intro}>
         <div><small>VALETE AO VIVO</small><h2>PRÓXIMAS PARADAS</h2><p>Confira onde a Valete vai tocar e abra cada apresentação para ver todas as informações.</p></div>

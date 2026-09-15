@@ -25,7 +25,7 @@ export default function Contato(){
   };
   return <main className="public-site inner-site" style={{"--accent":content.brand.accentColor} as React.CSSProperties}>
     <PublicHeader content={content}/>
-    <PageHero kicker="05 / FALE COM A GENTE" title={content.contact.heading}/>
+    <PageHero kicker="05 / FALE COM A GENTE" title={content.contact.heading} imageUrl={content.brand.contactBannerUrl}/>
     <section className="contact-route">
       <aside className="contact-copy">
         <p>{content.contact.text}</p>
