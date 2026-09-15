@@ -12,6 +12,35 @@ import { Bell, CalendarDays, CalendarPlus, Check, Clock, Disc3, Mail, MapPin, Pe
 const sections=[["geral","Geral"],["integrantes","Integrantes"],["agenda","Agenda"],["musica","Música"],["videos","Vídeos"],["fotos","Fotos"],["camisetas","Camisetas"],["mensagens","Contatos"],["contato","Config. contato"]];
 type Lead={id:number;name:string;phone:string;email:string;message:string;isRead:number;createdAt:string};
 
+async function optimizeImage(file:File){
+  const maximumBytes=2.8*1024*1024;
+  const maximumSide=2000;
+  if(file.size<=maximumBytes)return file;
+  let bitmap:ImageBitmap;
+  try{bitmap=await createImageBitmap(file);}catch{throw new Error("Não foi possível abrir essa imagem. Tente salvar como JPG ou PNG.");}
+  const scale=Math.min(1,maximumSide/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  const context=canvas.getContext("2d");if(!context){bitmap.close();throw new Error("Não foi possível preparar a imagem.");}
+  context.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
+  let quality=.86;let blob:Blob|null=null;
+  do{blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/webp",quality));quality-=.1;}while(blob&&blob.size>maximumBytes&&quality>=.46);
+  if(!blob)throw new Error("Não foi possível reduzir a imagem.");
+  if(blob.size>4*1024*1024)throw new Error("A imagem ainda ficou muito grande. Tente outra foto.");
+  return new File([blob],file.name.replace(/\.[^.]+$/,"")+".webp",{type:"image/webp"});
+}
+
+async function sendImage(file:File){
+  const prepared=await optimizeImage(file);
+  const body=new FormData();body.append("file",prepared);
+  const response=await fetch("/api/upload",{method:"POST",body});
+  const raw=await response.text();
+  let payload:{url?:string;error?:string}={};
+  try{payload=raw?JSON.parse(raw):{};}catch{if(response.status===413)throw new Error("A imagem ultrapassou o limite. Tente uma foto menor.");throw new Error("O servidor não conseguiu receber a imagem. Tente novamente.");}
+  if(!response.ok||!payload.url)throw new Error(payload.error||"Falha no envio da imagem.");
+  return payload.url;
+}
+
 export default function CmsClient({userName}:{userName:string}){
   const [active,setActive]=useState("geral");
   const [data,setData]=useState<SiteContent>(defaultContent);
@@ -86,8 +115,8 @@ export default function CmsClient({userName}:{userName:string}){
     finally{setSaving(false);}
   };
   const upload=async(file:File,onDone:(url:string)=>void)=>{
-    const body=new FormData();body.append("file",file);toast.loading("Enviando imagem…",{id:"upload"});
-    try{const r=await fetch("/api/upload",{method:"POST",body});const v=await r.json();if(!r.ok)throw new Error(v.error);onDone(v.url);toast.success("Imagem enviada.",{id:"upload"});}
+    toast.loading(file.size>2.8*1024*1024?"Otimizando e enviando imagem…":"Enviando imagem…",{id:"upload"});
+    try{const url=await sendImage(file);onDone(url);toast.success("Imagem enviada.",{id:"upload"});}
     catch(e){toast.error(e instanceof Error?e.message:"Falha no envio.",{id:"upload"});}
   };
   const uploadMany=async(files:File[],onDone:(urls:string[])=>void)=>{
@@ -96,10 +125,7 @@ export default function CmsClient({userName}:{userName:string}){
     try{
       const urls:string[]=[];
       for(const file of files){
-        const body=new FormData();body.append("file",file);
-        const r=await fetch("/api/upload",{method:"POST",body});const v=await r.json();
-        if(!r.ok)throw new Error(v.error);
-        urls.push(v.url);
+        urls.push(await sendImage(file));
       }
       onDone(urls);
       toast.success(`${urls.length} ${urls.length===1?"foto adicionada":"fotos adicionadas"}.`,{id:"album-upload"});
