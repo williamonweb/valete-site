@@ -7,8 +7,8 @@ export const dynamic="force-dynamic";
 export async function GET(){
   try{
     const rows=await sql()`SELECT value FROM cms_content WHERE key = 'site' LIMIT 1` as Array<{value:string}>;
-    return Response.json(rows[0]?normalizeContent(JSON.parse(rows[0].value)):defaultContent);
-  }catch{return Response.json(defaultContent);}
+    return Response.json(rows[0]?normalizeContent(JSON.parse(rows[0].value)):defaultContent,{headers:{"Cache-Control":"no-store, no-cache, must-revalidate, max-age=0"}});
+  }catch{return Response.json(defaultContent,{headers:{"Cache-Control":"no-store, no-cache, must-revalidate, max-age=0"}});}
 }
 
 export async function PUT(request:Request){

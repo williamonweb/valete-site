@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { PageHero, PublicFooter, PublicHeader } from "@/components/public-shell";
+import { PublicFooter, PublicHeader } from "@/components/public-shell";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSiteContent } from "@/hooks/use-site-content";
 import { MerchItem } from "@/lib/site-content";
@@ -34,7 +34,7 @@ export default function Camisetas(){
   };
 
   return <main className="public-site inner-site" style={{"--accent":content.brand.accentColor} as React.CSSProperties}>
-    <PublicHeader content={content}/><PageHero kicker="06 / VISTA O ROCK" title="CAMISETAS"/>
+    <PublicHeader content={content}/><section className={styles.hero}>{content.brand.merchBannerUrl&&<img src={content.brand.merchBannerUrl} alt="Camisetas oficiais da Valete"/>}<div><small>06 / VISTA O ROCK</small><h1>CAMISETAS</h1><p>MERCH OFICIAL VALETE</p></div></section>
     <section className={styles.route}>
       <header className={styles.intro}><div><small>MERCH OFICIAL</small><h2>LEVE A VALETE COM VOCÊ.</h2></div><p>Escolha o modelo, o tamanho e a cor. A equipe entra em contato para confirmar disponibilidade, pagamento e entrega.</p></header>
       {content.merch.length?<div className={styles.grid}>{content.merch.map(item=><button className={styles.card} type="button" key={item.id} onClick={()=>choose(item)}>
