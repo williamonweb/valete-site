@@ -1,6 +1,7 @@
 export type Member = { id:string; name:string; role:string; bio:string; imageUrl:string; iconUrl:string; instagramUrl:string };
-export type Show = { id:string; date:string; dateIso:string; time:string; place:string; city:string; note:string; status:"past"|"upcoming" };
+export type Show = { id:string; date:string; dateIso:string; time:string; place:string; city:string; note:string; coverUrl:string; status:"past"|"upcoming" };
 export type MusicVideo = { id:string; title:string; url:string };
+export type MusicTrack = { id:string; title:string; artist:string; coverUrl:string; url:string };
 export type AlbumPhoto = { id:string; url:string; caption:string };
 export type PhotoAlbum = { id:string; title:string; description:string; coverUrl:string; photos:AlbumPhoto[] };
 export type SiteContent = {
@@ -8,7 +9,7 @@ export type SiteContent = {
   about:{ heading:string; text:string };
   members:Member[];
   shows:Show[];
-  music:{ label:string; title:string; description:string; repertoire:string };
+  music:{ label:string; title:string; description:string; repertoire:string; tracks:MusicTrack[] };
   videos:MusicVideo[];
   albums:PhotoAlbum[];
   contact:{ heading:string; text:string; whatsapp:string; instagram:string };
@@ -24,11 +25,11 @@ export const defaultContent:SiteContent = {
     {id:"rodrigo",name:"RODRIGO",role:"Bateria",bio:"Biografia em breve.",imageUrl:"",iconUrl:"",instagramUrl:""},
   ],
   shows:[
-    {id:"maverick",date:"19 SETEMBRO",dateIso:"2026-09-19",time:"",place:"Bilhar do Nando",city:"Cachoeirinha - RS",note:"",status:"upcoming"},
-    {id:"taberna",date:"24 SETEMBRO",dateIso:"2026-09-24",time:"",place:"Confraria das Máquinas",city:"Gravataí - RS",note:"",status:"upcoming"},
-    {id:"itapua",date:"25 SETEMBRO",dateIso:"2026-09-25",time:"",place:"Taberna Velho Oeste",city:"Sapucaia do Sul - RS",note:"",status:"upcoming"},
+    {id:"maverick",date:"19 SETEMBRO",dateIso:"2026-09-19",time:"",place:"Bilhar do Nando",city:"Cachoeirinha - RS",note:"",coverUrl:"",status:"upcoming"},
+    {id:"taberna",date:"24 SETEMBRO",dateIso:"2026-09-24",time:"",place:"Confraria das Máquinas",city:"Gravataí - RS",note:"",coverUrl:"",status:"upcoming"},
+    {id:"itapua",date:"25 SETEMBRO",dateIso:"2026-09-25",time:"",place:"Taberna Velho Oeste",city:"Sapucaia do Sul - RS",note:"",coverUrl:"",status:"upcoming"},
   ],
-  music:{label:"AUTORAL",title:"ENTRE O CÉU E O CAOS",description:"Rock sentimental, estrada e intensidade. Uma música que carrega a fase atual da Valete.",repertoire:"POP ROCK NACIONAL · ROCK DOS ANOS 2000 · CLÁSSICOS INTERNACIONAIS · CRAZY TRAIN E MAIS"},
+  music:{label:"AUTORAL",title:"MÚSICAS DA VALETE",description:"Rock sentimental, estrada e intensidade. Ouça as músicas próprias da Valete.",repertoire:"POP ROCK NACIONAL · ROCK DOS ANOS 2000 · CLÁSSICOS INTERNACIONAIS · CRAZY TRAIN E MAIS",tracks:[{id:"entre-o-ceu-e-o-caos",title:"ENTRE O CÉU E O CAOS",artist:"Valete",coverUrl:"",url:""}]},
   videos:[{id:"outro-lugar",title:"Outro Lugar",url:"https://www.youtube.com/watch?v=XgY4Xh4hhDU"}],
   albums:[],
   contact:{heading:"SEU EVENTO PEDE ROCK?",text:"Festivais, pubs, encontros de motociclistas e eventos particulares. Fale com a Valete e consulte a agenda.",whatsapp:"",instagram:"https://www.instagram.com/bandavalete/"},
@@ -45,12 +46,13 @@ export function normalizeContent(value:unknown):SiteContent {
     brand,
     about:{...defaultContent.about,...v.about},
     members:Array.isArray(v.members)?v.members.map(member=>({...member,iconUrl:member.iconUrl||"",instagramUrl:member.instagramUrl||""})):defaultContent.members,
-    shows:Array.isArray(v.shows)?v.shows.map(show=>({...show,dateIso:show.dateIso||"",time:show.time||""})):defaultContent.shows,
+    shows:Array.isArray(v.shows)?v.shows.map(show=>({...show,dateIso:show.dateIso||"",time:show.time||"",coverUrl:show.coverUrl||""})):defaultContent.shows,
     music:{
       label:incomingMusic?.label??defaultContent.music.label,
       title:incomingMusic?.title??defaultContent.music.title,
       description:incomingMusic?.description??defaultContent.music.description,
       repertoire:incomingMusic?.repertoire??defaultContent.music.repertoire,
+      tracks:Array.isArray(incomingMusic?.tracks)?incomingMusic.tracks.map(track=>({...track,artist:track.artist||"Valete",coverUrl:track.coverUrl||"",url:track.url||""})):defaultContent.music.tracks,
     },
     videos:Array.isArray(v.videos)?v.videos:Array.isArray(legacyVideos)?legacyVideos:defaultContent.videos,
     albums:Array.isArray(v.albums)?v.albums.map(album=>({

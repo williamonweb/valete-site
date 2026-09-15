@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-import { defaultContent, Show, showDateLabel, showStatus, SiteContent } from "@/lib/site-content";
+import { defaultContent, MusicTrack, Show, showDateLabel, showStatus, SiteContent } from "@/lib/site-content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle } from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { Bell, CalendarDays, CalendarPlus, Check, Clock, Mail, MapPin, Pencil, Phone, Trash2 } from "lucide-react";
+import { Bell, CalendarDays, CalendarPlus, Check, Clock, Disc3, Mail, MapPin, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 
 const sections=[["geral","Geral"],["integrantes","Integrantes"],["agenda","Agenda"],["musica","Música"],["videos","Vídeos"],["fotos","Fotos"],["mensagens","Contatos"],["contato","Config. contato"]];
 type Lead={id:number;name:string;phone:string;email:string;message:string;isRead:number;createdAt:string};
@@ -21,6 +21,9 @@ export default function CmsClient({userName}:{userName:string}){
   const [showModalOpen,setShowModalOpen]=useState(false);
   const [newShow,setNewShow]=useState<Show>(()=>newShowDraft());
   const [editingShowIndex,setEditingShowIndex]=useState<number|null>(null);
+  const [trackModalOpen,setTrackModalOpen]=useState(false);
+  const [editingTrackIndex,setEditingTrackIndex]=useState<number|null>(null);
+  const [trackDraft,setTrackDraft]=useState<MusicTrack>(()=>newTrackDraft());
   useEffect(()=>{
     const refreshLeads=()=>fetch("/api/leads").then(r=>{if(!r.ok)throw new Error();return r.json();}).then(v=>setLeads(v.leads||[]));
     Promise.all([fetch("/api/content").then(r=>r.json()).then(v=>setData(v)),refreshLeads()])
@@ -47,6 +50,18 @@ export default function CmsClient({userName}:{userName:string}){
     setShowModalOpen(false);
     toast.success(editingShowIndex===null?"Data adicionada. Clique em Salvar alterações para publicar.":"Show atualizado. Clique em Salvar alterações para publicar.");
     setEditingShowIndex(null);
+  };
+  const openNewTrack=()=>{setEditingTrackIndex(null);setTrackDraft(newTrackDraft());setTrackModalOpen(true);};
+  const openEditTrack=(index:number)=>{setEditingTrackIndex(index);setTrackDraft({...data.music.tracks[index]});setTrackModalOpen(true);};
+  const saveTrackDraft=()=>{
+    if(!trackDraft.title.trim()){toast.error("Informe o nome da música.");return;}
+    if(trackDraft.url&&!/^https?:\/\//i.test(trackDraft.url)){toast.error("Cole o link completo da música, começando com https://");return;}
+    const normalized={...trackDraft,id:trackDraft.id||crypto.randomUUID(),title:trackDraft.title.trim(),artist:trackDraft.artist.trim()||"Valete",url:trackDraft.url.trim()};
+    const tracks=[...data.music.tracks];
+    if(editingTrackIndex===null)tracks.push(normalized);else tracks[editingTrackIndex]=normalized;
+    update("music",{...data.music,tracks});
+    setTrackModalOpen(false);setEditingTrackIndex(null);setTrackDraft(newTrackDraft());
+    toast.success("Música adicionada. Clique em Salvar alterações para publicar.");
   };
   const save=async()=>{
     setSaving(true);
@@ -147,13 +162,20 @@ export default function CmsClient({userName}:{userName:string}){
               <Field label="Local *"><Input autoFocus placeholder="Ex.: Bilhar do Nando" value={newShow.place} onChange={e=>setNewShow({...newShow,place:e.target.value})}/></Field>
               <Field label="Cidade *"><Input placeholder="Ex.: Cachoeirinha - RS" value={newShow.city} onChange={e=>setNewShow({...newShow,city:e.target.value})}/></Field>
               <Field label="Destaque ou informação"><Input placeholder="Ex.: Entrada gratuita" value={newShow.note} onChange={e=>setNewShow({...newShow,note:e.target.value})}/></Field>
+              <Field label="Capa do show (opcional)"><div className="grid gap-3 sm:grid-cols-[170px_minmax(0,1fr)]"><div className="grid aspect-video place-items-center overflow-hidden border border-[#393939] bg-[#080808] text-xs font-black tracking-[.1em] text-[#555]">{newShow.coverUrl?<img className="h-full w-full object-cover" src={newShow.coverUrl} alt="Capa do show"/>:<span>SEM CAPA</span>}</div><div className="flex flex-col justify-center gap-2"><Input className="!h-auto py-2 file:mr-3 file:text-[#c49a52]" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f)upload(f,url=>setNewShow(current=>({...current,coverUrl:url})));}}/>{newShow.coverUrl&&<Button className="!h-9 !border-[#4a3535] !bg-transparent !text-[#d48c83]" type="button" variant="outline" onClick={()=>setNewShow({...newShow,coverUrl:""})}>Remover capa</Button>}</div></div></Field>
             </div>
             <DialogFooter className="border-t border-[#303030] bg-[#0b0b0b] px-6 py-5 sm:px-8"><Button className="!border-[#444] !bg-transparent !text-[#aaa]" type="button" variant="outline" onClick={()=>setShowModalOpen(false)}>Cancelar</Button><Button className="add-button !min-h-11" type="button" onClick={saveShowDraft}>{editingShowIndex===null?"ADICIONAR À AGENDA":"SALVAR EDIÇÃO"}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </section>}
 
-      {active==="musica"&&<Editor title="Destaque musical"><Field label="Tipo"><Input value={data.music.label} onChange={e=>update("music",{...data.music,label:e.target.value})}/></Field><Field label="Título"><Input value={data.music.title} onChange={e=>update("music",{...data.music,title:e.target.value})}/></Field><Field label="Descrição"><Textarea rows={4} value={data.music.description} onChange={e=>update("music",{...data.music,description:e.target.value})}/></Field><Field label="Repertório"><Textarea rows={4} value={data.music.repertoire} onChange={e=>update("music",{...data.music,repertoire:e.target.value})}/></Field></Editor>}
+      {active==="musica"&&<div className="space-y-7">
+        <Editor title="Apresentação da página"><Field label="Tipo"><Input value={data.music.label} onChange={e=>update("music",{...data.music,label:e.target.value})}/></Field><Field label="Título"><Input value={data.music.title} onChange={e=>update("music",{...data.music,title:e.target.value})}/></Field><Field label="Descrição"><Textarea rows={3} value={data.music.description} onChange={e=>update("music",{...data.music,description:e.target.value})}/></Field><Field label="Repertório"><Textarea rows={3} value={data.music.repertoire} onChange={e=>update("music",{...data.music,repertoire:e.target.value})}/></Field></Editor>
+        <section className="border border-[#303030] bg-[#151515] p-5 sm:p-7"><header className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"><div><small className="font-black tracking-[.16em] text-[#c49a52]">MÚSICAS PRÓPRIAS</small><h2 className="mt-2 text-2xl font-black tracking-[-.04em] text-white">Biblioteca da Valete</h2><p className="mt-2 text-sm text-[#858585]">Capas quadradas com links para YouTube Music, YouTube ou Spotify.</p></div><Button className="add-button !h-11 !w-full gap-2 sm:!w-auto" type="button" onClick={openNewTrack}><Plus size={17}/> ADICIONAR MÚSICA</Button></header>
+          {data.music.tracks.length?<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{data.music.tracks.map((track,index)=><article key={track.id} className="grid grid-cols-[92px_minmax(0,1fr)] gap-4 border border-[#333] bg-[#0d0d0d] p-3"><div className="grid aspect-square place-items-center overflow-hidden bg-[#211c14] text-[#c49a52]">{track.coverUrl?<img className="h-full w-full object-cover" src={track.coverUrl} alt=""/>:<Disc3 size={34}/>}</div><div className="min-w-0 self-center"><h3 className="truncate text-base font-black text-white">{track.title}</h3><p className="mt-1 truncate text-sm text-[#858585]">{track.artist||"Valete"}</p><div className="mt-3 flex gap-2"><Button className="!h-8 gap-1.5 !border-[#555] !bg-transparent px-3 !text-white" type="button" variant="outline" onClick={()=>openEditTrack(index)}><Pencil size={13}/> Editar</Button><Button className="!size-8 !p-0" type="button" variant="destructive" aria-label={`Excluir ${track.title}`} onClick={()=>update("music",{...data.music,tracks:data.music.tracks.filter((_,i)=>i!==index)})}><Trash2 size={14}/></Button></div></div></article>)}</div>:<div className="grid min-h-52 place-items-center border border-dashed border-[#3a3a3a] text-center text-[#666]"><div><Disc3 className="mx-auto mb-3"/><p>Nenhuma música adicionada.</p></div></div>}
+        </section>
+        <Dialog open={trackModalOpen} onOpenChange={setTrackModalOpen}><DialogContent className="!w-[min(650px,calc(100vw-30px))] !max-w-none !gap-0 !rounded-none !border-[#514631] !bg-[#101010] !p-0 !text-white"><DialogHeader className="border-b border-[#303030] px-6 py-6 pr-14 sm:px-8"><small className="font-black tracking-[.17em] text-[#c49a52]">{editingTrackIndex===null?"NOVA MÚSICA":"EDITAR MÚSICA"}</small><DialogTitle className="mt-2 text-3xl font-black tracking-[-.04em] text-white">Música própria</DialogTitle><DialogDescription className="mt-1 text-[#858585]">Adicione a capa e o endereço onde o público poderá ouvir.</DialogDescription></DialogHeader><div className="grid gap-4 px-6 py-6 sm:px-8 [&_.cms-field]:!m-0 [&_input]:!h-11 [&_input]:!border-[#3d3d3d] [&_input]:!bg-[#090909] [&_input]:!text-white"><Field label="Nome da música *"><Input autoFocus placeholder="Ex.: Entre o Céu e o Caos" value={trackDraft.title} onChange={e=>setTrackDraft({...trackDraft,title:e.target.value})}/></Field><Field label="Artista"><Input placeholder="Valete" value={trackDraft.artist} onChange={e=>setTrackDraft({...trackDraft,artist:e.target.value})}/></Field><Field label="Link para ouvir"><Input type="url" placeholder="https://music.youtube.com/watch?v=..." value={trackDraft.url} onChange={e=>setTrackDraft({...trackDraft,url:e.target.value})}/></Field><Field label="Capa quadrada"><div className="grid gap-3 sm:grid-cols-[150px_minmax(0,1fr)]"><div className="grid aspect-square place-items-center overflow-hidden border border-[#393939] bg-[#080808] text-[#c49a52]">{trackDraft.coverUrl?<img className="h-full w-full object-cover" src={trackDraft.coverUrl} alt="Capa da música"/>:<Disc3 size={42}/>}</div><div className="flex flex-col justify-center gap-2"><Input className="!h-auto py-2 file:mr-3 file:text-[#c49a52]" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const f=e.target.files?.[0];if(f)upload(f,url=>setTrackDraft(current=>({...current,coverUrl:url})));}}/>{trackDraft.coverUrl&&<Button className="!h-9 !border-[#4a3535] !bg-transparent !text-[#d48c83]" type="button" variant="outline" onClick={()=>setTrackDraft({...trackDraft,coverUrl:""})}>Remover capa</Button>}</div></div></Field></div><DialogFooter className="border-t border-[#303030] bg-[#0b0b0b] px-6 py-5 sm:px-8"><Button className="!border-[#444] !bg-transparent !text-[#aaa]" type="button" variant="outline" onClick={()=>setTrackModalOpen(false)}>Cancelar</Button><Button className="add-button !min-h-11" type="button" onClick={saveTrackDraft}>{editingTrackIndex===null?"ADICIONAR MÚSICA":"SALVAR EDIÇÃO"}</Button></DialogFooter></DialogContent></Dialog>
+      </div>}
 
       {active==="videos"&&<Editor title="Vídeos do YouTube">{data.videos.map((video,index)=><div className="video-editor" key={video.id}><Field label="Título do vídeo"><Input placeholder="Ex.: Valete ao vivo" value={video.title} onChange={e=>{const videos=[...data.videos];videos[index]={...video,title:e.target.value};update("videos",videos);}}/></Field><Field label="Link do YouTube"><Input placeholder="https://www.youtube.com/watch?v=..." value={video.url} onChange={e=>{const videos=[...data.videos];videos[index]={...video,url:e.target.value};update("videos",videos);}}/></Field><Button variant="destructive" onClick={()=>update("videos",data.videos.filter((_,i)=>i!==index))}>Remover vídeo</Button></div>)}<Button className="add-button" onClick={()=>update("videos",[...data.videos,{id:crypto.randomUUID(),title:"",url:""}])}>+ ADICIONAR VÍDEO</Button></Editor>}
 
@@ -181,14 +203,15 @@ export default function CmsClient({userName}:{userName:string}){
   </main>;
 }
 
-function newShowDraft():Show{return {id:"",date:"",dateIso:"",time:"",place:"",city:"",note:"",status:"upcoming"};}
+function newShowDraft():Show{return {id:"",date:"",dateIso:"",time:"",place:"",city:"",note:"",coverUrl:"",status:"upcoming"};}
+function newTrackDraft():MusicTrack{return {id:"",title:"",artist:"Valete",coverUrl:"",url:""};}
 
 function CmsShowGroup({title,empty,items,data,update,onEdit}:{title:string;empty:string;items:{show:Show;index:number}[];data:SiteContent;update:(key:"shows",value:Show[])=>void;onEdit:(index:number)=>void}){
   return <section className="space-y-3">
     <header className="flex items-center gap-3"><h3 className="m-0 text-xs font-black tracking-[.16em] text-[#aaa]">{title}</h3><span className="grid size-6 place-items-center rounded-full bg-[#292929] text-[.68rem] font-black text-[#c49a52]">{items.length}</span></header>
     {!items.length&&<p className="m-0 border border-dashed border-[#3a3a3a] p-8 text-center text-[#6e6e6e]">{empty}</p>}
     <div className="space-y-3">{items.map(({show,index})=><article className="grid overflow-hidden border border-[#333] bg-[#151515] lg:grid-cols-[180px_minmax(0,1fr)_auto]" key={show.id}>
-      <div className="flex min-h-28 flex-col justify-center border-b border-[#303030] bg-[#0b0b0b] px-6 py-5 lg:border-r lg:border-b-0"><CalendarDays className="mb-3 size-5 text-[#c49a52]"/><strong className="text-base font-black text-white">{showDateLabel(show)||"SEM DATA"}</strong>{show.time&&<span className="mt-1 text-sm font-bold text-[#8c8c8c]">{show.time}</span>}</div>
+      <div className="flex min-h-28 flex-col justify-center border-b border-[#303030] bg-[#0b0b0b] p-4 lg:border-r lg:border-b-0">{show.coverUrl?<img className="mb-4 aspect-video w-full border border-[#333] object-cover" src={show.coverUrl} alt=""/>:<CalendarDays className="mb-3 size-5 text-[#c49a52]"/>}<strong className="text-base font-black text-white">{showDateLabel(show)||"SEM DATA"}</strong>{show.time&&<span className="mt-1 text-sm font-bold text-[#8c8c8c]">{show.time}</span>}</div>
       <div className="flex min-h-28 flex-col justify-center px-6 py-5"><small className="font-black tracking-[.12em] text-[#c49a52]">{showStatus(show)==="past"?"ARQUIVADO AUTOMATICAMENTE":"PRÓXIMA APRESENTAÇÃO"}</small><h4 className="my-2 text-2xl font-black tracking-[-.035em] text-white">{show.place||"Local não informado"}</h4><p className="m-0 flex items-center gap-2 text-sm text-[#909090]"><MapPin size={15}/>{show.city||"Cidade não informada"}</p>{show.note&&<p className="mt-3 text-sm text-[#b0b0b0]">{show.note}</p>}{!show.dateIso&&<em className="mt-3 text-xs text-[#d59b7d]">Edite este show e selecione a data para ativar o arquivamento automático.</em>}</div>
       <div className="flex items-center gap-2 border-t border-[#303030] px-5 py-4 lg:border-t-0 lg:border-l"><Button className="!h-10 gap-2 !border-[#555] !bg-transparent !text-white" type="button" variant="outline" onClick={()=>onEdit(index)}><Pencil size={15}/> Editar</Button><Button className="!size-10 !p-0" aria-label={`Excluir ${show.place}`} type="button" variant="destructive" onClick={()=>update("shows",data.shows.filter((_,i)=>i!==index))}><Trash2 size={16}/></Button></div>
     </article>)}</div>
