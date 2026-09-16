@@ -1,14 +1,14 @@
-import { defaultContent, normalizeContent } from "@/lib/site-content";
+import { normalizeContent } from "@/lib/site-content";
 import { requireCmsAdmin } from "@/lib/cms-auth";
 import { sql } from "@/lib/db";
+import { loadSiteContent } from "@/lib/site-content-server";
 
 export const dynamic="force-dynamic";
 
 export async function GET(){
   try{
-    const rows=await sql()`SELECT value FROM cms_content WHERE key = 'site' LIMIT 1` as Array<{value:string}>;
-    return Response.json(rows[0]?normalizeContent(JSON.parse(rows[0].value)):defaultContent,{headers:{"Cache-Control":"no-store, no-cache, must-revalidate, max-age=0"}});
-  }catch{return Response.json(defaultContent,{headers:{"Cache-Control":"no-store, no-cache, must-revalidate, max-age=0"}});}
+    return Response.json(await loadSiteContent(),{headers:{"Cache-Control":"no-store, no-cache, must-revalidate, max-age=0"}});
+  }catch{return Response.json({ok:false,error:"Não foi possível carregar o conteúdo."},{status:503,headers:{"Cache-Control":"no-store, no-cache, must-revalidate, max-age=0"}});}
 }
 
 export async function PUT(request:Request){
@@ -21,6 +21,6 @@ export async function PUT(request:Request){
     return Response.json({ok:true,content});
   }catch(error){
     const message=error instanceof Error?error.message:"ERROR";
-    return Response.json({ok:false,error:message},{status:message==="FORBIDDEN"?403:401});
+    return Response.json({ok:false,error:message},{status:message==="UNAUTHENTICATED"?401:message==="FORBIDDEN"?403:500});
   }
 }

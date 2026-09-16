@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { defaultContent, MerchItem, MusicTrack, Show, showDateLabel, showStatus, SiteContent } from "@/lib/site-content";
+import { useRouter } from "next/navigation";
+import { MerchItem, MusicTrack, Show, showDateLabel, showStatus, SiteContent } from "@/lib/site-content";
+import { publishSiteContent } from "@/hooks/use-site-content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,9 +47,10 @@ async function sendImage(file:File){
   return payload.url;
 }
 
-export default function CmsClient({userName}:{userName:string}){
+export default function CmsClient({userName,initialContent}:{userName:string;initialContent:SiteContent}){
+  const router=useRouter();
   const [active,setActive]=useState("geral");
-  const [data,setData]=useState<SiteContent>(defaultContent);
+  const [data,setData]=useState<SiteContent>(initialContent);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [leads,setLeads]=useState<Lead[]>([]);
@@ -62,7 +65,7 @@ export default function CmsClient({userName}:{userName:string}){
   const [merchDraft,setMerchDraft]=useState<MerchItem>(()=>newMerchDraft());
   useEffect(()=>{
     const refreshLeads=()=>fetch("/api/leads").then(r=>{if(!r.ok)throw new Error();return r.json();}).then(v=>setLeads(v.leads||[]));
-    Promise.all([fetch("/api/content").then(r=>r.json()).then(v=>setData(v)),refreshLeads()])
+    Promise.all([fetch("/api/content",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error();return r.json();}).then(v=>setData(v)),refreshLeads()])
       .catch(()=>toast.error("Não foi possível carregar todos os dados do painel.")).finally(()=>setLoading(false));
     const timer=window.setInterval(()=>refreshLeads().catch(()=>undefined),30000);
     return()=>window.clearInterval(timer);
@@ -109,7 +112,7 @@ export default function CmsClient({userName}:{userName:string}){
     const merch=[...data.merch];if(editingMerchIndex===null)merch.push(item);else merch[editingMerchIndex]=item;
     const nextData={...data,merch};setData(nextData);setMerchModalOpen(false);setEditingMerchIndex(null);setMerchDraft(newMerchDraft());
     toast.loading("Publicando camiseta…",{id:"merch-save"});
-    try{const response=await fetch("/api/content",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(nextData)});if(!response.ok)throw new Error();toast.success("Camiseta publicada no site.",{id:"merch-save"});}
+    try{const response=await fetch("/api/content",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(nextData)});if(!response.ok)throw new Error();const result=await response.json();const saved=result.content||nextData;setData(saved);publishSiteContent(saved);toast.success("Camiseta publicada no site.",{id:"merch-save"});}
     catch{toast.error("O card ficou no painel, mas não foi publicado. Clique em Salvar alterações.",{id:"merch-save"});}
   };
   const save=async()=>{
@@ -117,6 +120,10 @@ export default function CmsClient({userName}:{userName:string}){
     try{
       const r=await fetch("/api/content",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(data)});
       if(!r.ok) throw new Error();
+      const result=await r.json();
+      const saved=result.content||data;
+      setData(saved);
+      publishSiteContent(saved);
       toast.success("Alterações publicadas no site.");
     }catch{toast.error("Não foi possível salvar. Tente novamente.");}
     finally{setSaving(false);}
@@ -147,7 +154,8 @@ export default function CmsClient({userName}:{userName:string}){
   };
   const logout=async()=>{
     await fetch("/api/auth/logout",{method:"POST"});
-    window.location.href="/cms/login";
+    router.replace("/cms/login");
+    router.refresh();
   };
   if(loading)return <main className="cms-loading">Carregando painel…</main>;
   return <main className="cms-shell">

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { PublicFooter,PublicHeader } from "@/components/public-shell";
 import { useSiteContent } from "@/hooks/use-site-content";
 
@@ -12,7 +13,7 @@ export function LegalPage({kicker,title,intro,sections}:{kicker:string;title:str
     <article className="legal-content">
       <p className="legal-intro">{intro}</p>
       {sections.map(section=><section key={section.heading}><h2>{section.heading}</h2>{section.paragraphs.map((paragraph,index)=><p key={index}>{paragraph}</p>)}</section>)}
-      <p className="legal-contact">Dúvidas sobre este documento podem ser enviadas pelos canais disponíveis na página <a href="/contato">Contato</a>.</p>
+      <p className="legal-contact">Dúvidas sobre este documento podem ser enviadas pelos canais disponíveis na página <Link href="/contato">Contato</Link>.</p>
     </article>
     <PublicFooter content={content}/>
   </main>;

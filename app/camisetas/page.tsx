@@ -46,20 +46,22 @@ export default function Camisetas(){
     <Dialog open={!!selected} onOpenChange={open=>{if(!open)setSelected(null);}}><DialogContent className={styles.modal}>{selected&&<>
       <div className={styles.modalImage}>{selected.imageUrl?<img src={selected.imageUrl} alt={selected.name}/>:<span><Shirt/><b>VALETE</b><small>MERCH OFICIAL</small></span>}</div>
       <form className={styles.form} onSubmit={submit}>{status==="success"?<div className={styles.success}><Check/><small>PEDIDO RECEBIDO</small><h2>Valeu pelo interesse!</h2><p>A equipe da Valete recebeu sua escolha e entrará em contato para confirmar os detalhes.</p><button type="button" onClick={()=>setSelected(null)}>FECHAR</button></div>:<>
-        <DialogHeader><small>CAMISETA OFICIAL</small><DialogTitle>{selected.name}</DialogTitle><DialogDescription>{selected.description}</DialogDescription></DialogHeader>
-        {selected.priceLabel&&<strong className={styles.price}>{selected.priceLabel}</strong>}
-        <div className={styles.fields}>
-          <label><span>TAMANHO *</span><select required value={form.size} onChange={e=>setForm({...form,size:e.target.value})}>{selected.sizes.map(size=><option key={size}>{size}</option>)}</select></label>
-          <label><span>COR *</span><select required value={form.color} onChange={e=>setForm({...form,color:e.target.value})}>{selected.colors.map(color=><option key={color}>{color}</option>)}</select></label>
-          <label><span>SEU NOME *</span><input required minLength={2} maxLength={100} autoComplete="name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>
-          <label><span>TELEFONE *</span><input required inputMode="tel" autoComplete="tel" placeholder="(00) 00000-0000" value={form.phone} onChange={e=>setForm({...form,phone:formatPhone(e.target.value)})}/></label>
-          <label className={styles.full}><span>E-MAIL *</span><input required type="email" maxLength={160} autoComplete="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label>
-          <label className={styles.full}><span>OBSERVAÇÃO</span><textarea rows={3} maxLength={500} placeholder="Ex.: Prefiro retirar pessoalmente." value={form.note} onChange={e=>setForm({...form,note:e.target.value})}/></label>
-          <label className={styles.honeypot} aria-hidden="true"><span>Empresa</span><input tabIndex={-1} autoComplete="off" value={form.company} onChange={e=>setForm({...form,company:e.target.value})}/></label>
+        <div className={styles.formBody}>
+          <DialogHeader><small>CAMISETA OFICIAL</small><DialogTitle>{selected.name}</DialogTitle><DialogDescription>{selected.description}</DialogDescription></DialogHeader>
+          {selected.priceLabel&&<strong className={styles.price}>{selected.priceLabel}</strong>}
+          <div className={styles.fields}>
+            <label><span>TAMANHO *</span><select required value={form.size} onChange={e=>setForm({...form,size:e.target.value})}>{selected.sizes.map(size=><option key={size}>{size}</option>)}</select></label>
+            <label><span>COR *</span><select required value={form.color} onChange={e=>setForm({...form,color:e.target.value})}>{selected.colors.map(color=><option key={color}>{color}</option>)}</select></label>
+            <label><span>SEU NOME *</span><input required minLength={2} maxLength={100} autoComplete="name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>
+            <label><span>TELEFONE *</span><input required inputMode="tel" autoComplete="tel" placeholder="(00) 00000-0000" value={form.phone} onChange={e=>setForm({...form,phone:formatPhone(e.target.value)})}/></label>
+            <label className={styles.full}><span>E-MAIL *</span><input required type="email" maxLength={160} autoComplete="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></label>
+            <label className={styles.full}><span>OBSERVAÇÃO</span><textarea rows={3} maxLength={500} placeholder="Ex.: Prefiro retirar pessoalmente." value={form.note} onChange={e=>setForm({...form,note:e.target.value})}/></label>
+            <label className={styles.honeypot} aria-hidden="true"><span>Empresa</span><input tabIndex={-1} autoComplete="off" value={form.company} onChange={e=>setForm({...form,company:e.target.value})}/></label>
+          </div>
+          {status==="error"&&<p className={styles.error}>Não foi possível enviar agora. Confira os dados e tente novamente.</p>}
+          <small className={styles.disclaimer}>Este formulário não realiza cobrança. A equipe confirmará disponibilidade, pagamento e entrega.</small>
         </div>
-        <button className={styles.submit} type="submit" disabled={status==="sending"}>{status==="sending"?"ENVIANDO…":"TENHO INTERESSE →"}</button>
-        {status==="error"&&<p className={styles.error}>Não foi possível enviar agora. Confira os dados e tente novamente.</p>}
-        <small className={styles.disclaimer}>Este formulário não realiza cobrança. A equipe confirmará disponibilidade, pagamento e entrega.</small>
+        <div className={styles.formFooter}><button className={styles.submit} type="submit" disabled={status==="sending"}>{status==="sending"?"ENVIANDO…":"ENVIAR PEDIDO →"}</button></div>
       </>}</form>
     </>}</DialogContent></Dialog>
     <PublicFooter content={content}/>

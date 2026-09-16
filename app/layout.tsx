@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import { SiteContentProvider } from "@/hooks/use-site-content";
+import { loadSiteContentSafe } from "@/lib/site-content-server";
 import "./globals.css";
+
+export const dynamic="force-dynamic";
 
 export const metadata: Metadata = {
   title: "Valete | Rock de Gravataí",
@@ -10,14 +14,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialContent=await loadSiteContentSafe();
   return (
     <html lang="pt-BR">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased"><SiteContentProvider initialContent={initialContent}>{children}</SiteContentProvider></body>
     </html>
   );
 }

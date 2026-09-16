@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { IntroAnimation } from "@/components/intro-animation";
 import { PublicFooter,PublicHeader } from "@/components/public-shell";
 import { useSiteContent } from "@/hooks/use-site-content";
@@ -13,7 +14,7 @@ export default function Home(){
         <p className="hero-kicker">{content.brand.city}</p>
         <h1>{content.brand.heroTitle}</h1>
         <p className="hero-subtitle">{content.brand.heroText}</p>
-        <div className="home-actions"><a className="rock-button" href="/agenda" target="_self">VER AGENDA <span>↗</span></a><a className="text-link" href="/contato" target="_self">CONTRATE A VALETE →</a></div>
+        <div className="home-actions"><Link className="rock-button" href="/agenda">VER AGENDA <span>↗</span></Link><Link className="text-link" href="/contato">CONTRATE A VALETE →</Link></div>
       </div>
       {!content.brand.heroImageUrl&&<div className="banner-empty"><strong>FOTO DA BANDA</strong><span>Adicione pelo painel CMS</span></div>}
       <div className="home-rail"><span>ROCK NACIONAL</span><b>✦</b><span>ANOS 2000</span><b>✦</b><span>CLÁSSICOS PESADOS</span></div>

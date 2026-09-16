@@ -1,5 +1,6 @@
 "use client";
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { PageHero,PublicFooter,PublicHeader } from "@/components/public-shell";
 import { useSiteContent } from "@/hooks/use-site-content";
 
@@ -41,7 +42,7 @@ export default function Contato(){
           <label className="full"><span>MENSAGEM</span><textarea required minLength={5} maxLength={2000} rows={6} placeholder="Conte sobre o evento, data e cidade." value={form.message} onChange={e=>setForm({...form,message:e.target.value})}/></label>
           <label className="contact-honeypot" aria-hidden="true"><span>Empresa</span><input tabIndex={-1} autoComplete="off" value={form.company} onChange={e=>setForm({...form,company:e.target.value})}/></label>
         </div>
-        <div className="contact-submit"><button type="submit" disabled={status==="sending"}>{status==="sending"?"ENVIANDO…":"ENVIAR MENSAGEM →"}</button><small>Ao enviar, você concorda com nossa <a href="/privacidade">Política de Privacidade</a>.</small></div>
+        <div className="contact-submit"><button type="submit" disabled={status==="sending"}>{status==="sending"?"ENVIANDO…":"ENVIAR MENSAGEM →"}</button><small>Ao enviar, você concorda com nossa <Link href="/privacidade">Política de Privacidade</Link>.</small></div>
         <div className="contact-feedback" aria-live="polite">{status==="success"&&<p className="success">Mensagem enviada. Em breve a gente chama você.</p>}{status==="error"&&<p className="error">Não foi possível enviar agora. Tente novamente.</p>}</div>
       </form>
     </section>

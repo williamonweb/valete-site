@@ -37,6 +37,6 @@ export async function GET(){
     return Response.json({leads:rows});
   }catch(error){
     const message=error instanceof Error?error.message:"ERROR";
-    return Response.json({error:message},{status:message==="FORBIDDEN"?403:401});
+    return Response.json({error:message},{status:message==="UNAUTHENTICATED"?401:message==="FORBIDDEN"?403:500});
   }
 }
