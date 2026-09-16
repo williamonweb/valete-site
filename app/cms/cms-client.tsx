@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle } from "@/components/ui/dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { Bell, CalendarDays, CalendarPlus, Check, Clock, Disc3, Image as ImageIcon, Mail, MapPin, Pencil, Phone, Plus, Shirt, Trash2 } from "lucide-react";
+import { Bell, CalendarDays, CalendarPlus, Check, Clock, Disc3, Image as ImageIcon, Mail, MapPin, MessageCircle, Pencil, Phone, Plus, Shirt, Trash2 } from "lucide-react";
 
 const sections=[["geral","Geral"],["banners","Banners"],["integrantes","Integrantes"],["agenda","Agenda"],["musica","Música"],["videos","Vídeos"],["fotos","Fotos"],["camisetas","Camisetas"],["mensagens","Contatos"],["contato","Config. contato"]];
 type Lead={id:number;name:string;phone:string;email:string;message:string;isRead:number;createdAt:string};
@@ -54,6 +54,7 @@ export default function CmsClient({userName,initialContent}:{userName:string;ini
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [leads,setLeads]=useState<Lead[]>([]);
+  const [selectedLeadId,setSelectedLeadId]=useState<number|null>(null);
   const [showModalOpen,setShowModalOpen]=useState(false);
   const [newShow,setNewShow]=useState<Show>(()=>newShowDraft());
   const [editingShowIndex,setEditingShowIndex]=useState<number|null>(null);
@@ -71,6 +72,7 @@ export default function CmsClient({userName,initialContent}:{userName:string;ini
     return()=>window.clearInterval(timer);
   },[]);
   const unread=leads.filter(lead=>!lead.isRead).length;
+  const selectedLead=leads.find(lead=>lead.id===selectedLeadId)||null;
   const indexedShows=data.shows.map((show,index)=>({show,index}));
   const upcomingShows=indexedShows.filter(({show})=>showStatus(show)==="upcoming").sort((a,b)=>(a.show.dateIso||"9999-99-99").localeCompare(b.show.dateIso||"9999-99-99"));
   const pastShows=indexedShows.filter(({show})=>showStatus(show)==="past").sort((a,b)=>(b.show.dateIso||"").localeCompare(a.show.dateIso||""));
@@ -281,11 +283,16 @@ export default function CmsClient({userName,initialContent}:{userName:string;ini
 
       {active==="mensagens"&&<section className="lead-inbox">
         <div className="lead-inbox-intro"><div><small>CAIXA DE ENTRADA</small><h2>Pedidos recebidos pelo site</h2></div><p>Os contatos mais recentes aparecem primeiro. Marque como lido depois que responder.</p></div>
-        {leads.length?<div className="lead-list">{leads.map(lead=><article key={lead.id} className={lead.isRead?"lead-card":"lead-card unread"}>
-          <header><div><span className="lead-status">{lead.isRead?"LIDO":"NOVO CONTATO"}</span><h3>{lead.name}</h3><time>{new Intl.DateTimeFormat("pt-BR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(lead.createdAt))}</time></div><button type="button" onClick={()=>setLeadRead(lead.id,!lead.isRead)}><Check size={15}/>{lead.isRead?"Marcar como novo":"Marcar como lido"}</button></header>
-          <p className="lead-message">{lead.message}</p>
-          <footer><a href={`tel:${lead.phone.replace(/\D/g,"")}`}><Phone size={15}/>{lead.phone}</a><a href={`mailto:${lead.email}`}><Mail size={15}/>{lead.email}</a></footer>
+        {leads.length?<div className="lead-list">{leads.map(lead=><article key={lead.id} className={lead.isRead?"lead-row":"lead-row unread"}>
+          <button className="lead-open" type="button" onClick={()=>setSelectedLeadId(lead.id)}><span className="lead-status">{lead.isRead?"LIDO":"NOVO"}</span><span className="lead-person"><strong>{lead.name}</strong><small>{lead.message.split("\n")[0]||"Contato pelo site"}</small></span><time>{new Intl.DateTimeFormat("pt-BR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(lead.createdAt))}</time><span className="lead-view">VER PEDIDO →</span></button>
+          <button className="lead-read" type="button" onClick={()=>setLeadRead(lead.id,!lead.isRead)} aria-label={lead.isRead?`Marcar contato de ${lead.name} como novo`:`Marcar contato de ${lead.name} como lido`}><Check size={16}/><span>{lead.isRead?"Marcar como novo":"Marcar como lido"}</span></button>
         </article>)}</div>:<div className="lead-empty"><Bell size={34}/><h2>Nenhum contato ainda</h2><p>Quando alguém enviar o formulário do site, a mensagem aparecerá aqui.</p></div>}
+        <Dialog open={!!selectedLead} onOpenChange={open=>{if(!open)setSelectedLeadId(null);}}><DialogContent className="lead-modal">{selectedLead&&<>
+          <DialogHeader><small>{selectedLead.isRead?"CONTATO LIDO":"NOVO CONTATO"}</small><DialogTitle>{selectedLead.name}</DialogTitle><DialogDescription>Recebido em {new Intl.DateTimeFormat("pt-BR",{dateStyle:"long",timeStyle:"short"}).format(new Date(selectedLead.createdAt))}</DialogDescription></DialogHeader>
+          <div className="lead-modal-message">{selectedLead.message}</div>
+          <div className="lead-modal-contact"><a href={`tel:${selectedLead.phone.replace(/\D/g,"")}`}><Phone size={17}/><span><small>TELEFONE</small>{selectedLead.phone}</span></a><a href={`mailto:${selectedLead.email}`}><Mail size={17}/><span><small>E-MAIL</small>{selectedLead.email}</span></a></div>
+          <div className="lead-modal-actions"><a className="lead-whatsapp" href={whatsappLeadUrl(selectedLead)} target="_blank" rel="noreferrer"><MessageCircle size={19}/> CHAMAR NO WHATSAPP ↗</a><button type="button" onClick={()=>setLeadRead(selectedLead.id,!selectedLead.isRead)}><Check size={17}/>{selectedLead.isRead?"MARCAR COMO NOVO":"MARCAR COMO LIDO"}</button></div>
+        </>}</DialogContent></Dialog>
       </section>}
 
       {active==="contato"&&<Editor title="Contratação"><Field label="Título"><Input value={data.contact.heading} onChange={e=>update("contact",{...data.contact,heading:e.target.value})}/></Field><Field label="Texto"><Textarea rows={4} value={data.contact.text} onChange={e=>update("contact",{...data.contact,text:e.target.value})}/></Field><Field label="Link completo do WhatsApp"><Input placeholder="https://wa.me/55..." value={data.contact.whatsapp} onChange={e=>update("contact",{...data.contact,whatsapp:e.target.value})}/></Field><Field label="Link completo do Instagram"><Input placeholder="https://instagram.com/..." value={data.contact.instagram} onChange={e=>update("contact",{...data.contact,instagram:e.target.value})}/></Field></Editor>}
@@ -296,6 +303,13 @@ export default function CmsClient({userName,initialContent}:{userName:string;ini
 function newShowDraft():Show{return {id:"",date:"",dateIso:"",time:"",place:"",city:"",note:"",coverUrl:"",linkUrl:"",linkLabel:"",status:"upcoming"};}
 function newTrackDraft():MusicTrack{return {id:"",title:"",artist:"Valete",coverUrl:"",url:""};}
 function newMerchDraft():MerchItem{return {id:"",name:"",description:"",imageUrl:"",priceLabel:"",colors:["Preta"],sizes:["P","M","G","GG"]};}
+
+function whatsappLeadUrl(lead:Lead){
+  const digits=lead.phone.replace(/\D/g,"");
+  const number=digits.startsWith("55")?digits:`55${digits}`;
+  const message=`Olá, ${lead.name}! Aqui é da Banda Valete. Recebemos seu pedido pelo nosso site e estamos entrando em contato para confirmar os detalhes.`;
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+}
 
 function CmsShowGroup({title,empty,items,data,update,onEdit}:{title:string;empty:string;items:{show:Show;index:number}[];data:SiteContent;update:(key:"shows",value:Show[])=>void;onEdit:(index:number)=>void}){
   return <section className="space-y-3">
