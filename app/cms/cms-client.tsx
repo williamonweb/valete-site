@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Bell, CalendarDays, CalendarPlus, Check, Clock, Disc3, Image as ImageIcon, Mail, MapPin, MessageCircle, Pencil, Phone, Plus, Shirt, Trash2 } from "lucide-react";
 
 const sections=[["geral","Geral"],["banners","Banners"],["integrantes","Integrantes"],["agenda","Agenda"],["musica","Música"],["videos","Vídeos"],["fotos","Fotos"],["camisetas","Camisetas"],["mensagens","Contatos"],["contato","Config. contato"]];
-type Lead={id:number;name:string;phone:string;email:string;message:string;isRead:number;createdAt:string};
+type Lead={id:number;name:string;phone:string;email:string;message:string;isRead:number;deliveredAt:string|null;createdAt:string};
 type BannerKey="heroImageUrl"|"aboutBannerUrl"|"agendaBannerUrl"|"musicBannerUrl"|"videosBannerUrl"|"photosBannerUrl"|"merchBannerUrl"|"contactBannerUrl";
 const bannerOptions:{key:BannerKey;title:string;route:string}[]=[
   {key:"heroImageUrl",title:"Página inicial",route:"/"},{key:"aboutBannerUrl",title:"A Banda",route:"/banda"},{key:"agendaBannerUrl",title:"Agenda",route:"/agenda"},{key:"musicBannerUrl",title:"Música",route:"/musica"},{key:"videosBannerUrl",title:"Vídeos",route:"/videos"},{key:"photosBannerUrl",title:"Fotos",route:"/fotos"},{key:"merchBannerUrl",title:"Camisetas",route:"/camisetas"},{key:"contactBannerUrl",title:"Contato",route:"/contato"},
@@ -154,6 +154,15 @@ export default function CmsClient({userName,initialContent}:{userName:string;ini
       setLeads(current=>current.map(lead=>lead.id===id?{...lead,isRead:isRead?1:0}:lead));
     }catch{toast.error("Não foi possível atualizar o contato.");}
   };
+  const setLeadDelivered=async(id:number,delivered:boolean)=>{
+    try{
+      const response=await fetch(`/api/leads/${id}`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify(delivered?{delivered:true,isRead:true}:{delivered:false})});
+      if(!response.ok)throw new Error();
+      const result=await response.json() as {deliveredAt?:string|null};
+      setLeads(current=>current.map(lead=>lead.id===id?{...lead,isRead:delivered?1:lead.isRead,deliveredAt:result.deliveredAt??null}:lead));
+      toast.success(delivered?"Entrega confirmada.":"Confirmação de entrega removida.");
+    }catch{toast.error("Não foi possível atualizar a entrega.");}
+  };
   const logout=async()=>{
     await fetch("/api/auth/logout",{method:"POST"});
     router.replace("/cms/login");
@@ -284,14 +293,14 @@ export default function CmsClient({userName,initialContent}:{userName:string;ini
       {active==="mensagens"&&<section className="lead-inbox">
         <div className="lead-inbox-intro"><div><small>CAIXA DE ENTRADA</small><h2>Pedidos recebidos pelo site</h2></div><p>Os contatos mais recentes aparecem primeiro. Marque como lido depois que responder.</p></div>
         {leads.length?<div className="lead-list">{leads.map(lead=><article key={lead.id} className={lead.isRead?"lead-row":"lead-row unread"}>
-          <button className="lead-open" type="button" onClick={()=>setSelectedLeadId(lead.id)}><span className="lead-status">{lead.isRead?"LIDO":"NOVO"}</span><span className="lead-person"><strong>{lead.name}</strong><small>{lead.message.split("\n")[0]||"Contato pelo site"}</small></span><time>{new Intl.DateTimeFormat("pt-BR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(lead.createdAt))}</time><span className="lead-view">VER PEDIDO →</span></button>
+          <button className="lead-open" type="button" onClick={()=>setSelectedLeadId(lead.id)}><span className={lead.deliveredAt?"lead-status delivered":"lead-status"}>{lead.deliveredAt?"ENTREGUE":lead.isRead?"LIDO":"NOVO"}</span><span className="lead-person"><strong>{lead.name}</strong><small>{lead.message.split("\n")[0]||"Contato pelo site"}</small></span><time>{new Intl.DateTimeFormat("pt-BR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(lead.createdAt))}</time><span className="lead-view">VER PEDIDO →</span></button>
           <button className="lead-read" type="button" onClick={()=>setLeadRead(lead.id,!lead.isRead)} aria-label={lead.isRead?`Marcar contato de ${lead.name} como novo`:`Marcar contato de ${lead.name} como lido`}><Check size={16}/><span>{lead.isRead?"Marcar como novo":"Marcar como lido"}</span></button>
         </article>)}</div>:<div className="lead-empty"><Bell size={34}/><h2>Nenhum contato ainda</h2><p>Quando alguém enviar o formulário do site, a mensagem aparecerá aqui.</p></div>}
         <Dialog open={!!selectedLead} onOpenChange={open=>{if(!open)setSelectedLeadId(null);}}><DialogContent className="lead-modal">{selectedLead&&<>
-          <DialogHeader><small>{selectedLead.isRead?"CONTATO LIDO":"NOVO CONTATO"}</small><DialogTitle>{selectedLead.name}</DialogTitle><DialogDescription>Recebido em {new Intl.DateTimeFormat("pt-BR",{dateStyle:"long",timeStyle:"short"}).format(new Date(selectedLead.createdAt))}</DialogDescription></DialogHeader>
+          <DialogHeader><small>{selectedLead.deliveredAt?"PEDIDO ENTREGUE":selectedLead.isRead?"CONTATO LIDO":"NOVO CONTATO"}</small><DialogTitle>{selectedLead.name}</DialogTitle><DialogDescription>Recebido em {new Intl.DateTimeFormat("pt-BR",{dateStyle:"long",timeStyle:"short"}).format(new Date(selectedLead.createdAt))}{selectedLead.deliveredAt?` · Entregue em ${new Intl.DateTimeFormat("pt-BR",{dateStyle:"short",timeStyle:"short"}).format(new Date(selectedLead.deliveredAt))}`:""}</DialogDescription></DialogHeader>
           <div className="lead-modal-message">{selectedLead.message}</div>
           <div className="lead-modal-contact"><a href={`tel:${selectedLead.phone.replace(/\D/g,"")}`}><Phone size={17}/><span><small>TELEFONE</small>{selectedLead.phone}</span></a><a href={`mailto:${selectedLead.email}`}><Mail size={17}/><span><small>E-MAIL</small>{selectedLead.email}</span></a></div>
-          <div className="lead-modal-actions"><a className="lead-whatsapp" href={whatsappLeadUrl(selectedLead)} target="_blank" rel="noreferrer"><MessageCircle size={19}/> CHAMAR NO WHATSAPP ↗</a><button type="button" onClick={()=>setLeadRead(selectedLead.id,!selectedLead.isRead)}><Check size={17}/>{selectedLead.isRead?"MARCAR COMO NOVO":"MARCAR COMO LIDO"}</button></div>
+          <div className="lead-modal-actions"><a className="lead-whatsapp" href={whatsappLeadUrl(selectedLead)} target="_blank" rel="noreferrer"><MessageCircle size={19}/> CHAMAR NO WHATSAPP ↗</a>{isMerchLead(selectedLead)&&<button className={selectedLead.deliveredAt?"lead-delivery delivered":"lead-delivery"} type="button" onClick={()=>setLeadDelivered(selectedLead.id,!selectedLead.deliveredAt)}><Check size={17}/>{selectedLead.deliveredAt?"DESFAZER ENTREGA":"CONFIRMAR ENTREGA"}</button>}<button type="button" onClick={()=>setLeadRead(selectedLead.id,!selectedLead.isRead)}><Check size={17}/>{selectedLead.isRead?"MARCAR COMO NOVO":"MARCAR COMO LIDO"}</button></div>
         </>}</DialogContent></Dialog>
       </section>}
 
@@ -310,6 +319,8 @@ function whatsappLeadUrl(lead:Lead){
   const message=`Olá, ${lead.name}! Aqui é da Banda Valete. Recebemos seu pedido pelo nosso site e estamos entrando em contato para confirmar os detalhes.`;
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
+
+function isMerchLead(lead:Lead){return lead.message.startsWith("INTERESSE EM CAMISETA VALETE");}
 
 function CmsShowGroup({title,empty,items,data,update,onEdit}:{title:string;empty:string;items:{show:Show;index:number}[];data:SiteContent;update:(key:"shows",value:Show[])=>void;onEdit:(index:number)=>void}){
   return <section className="space-y-3">

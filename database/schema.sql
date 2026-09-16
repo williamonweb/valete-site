@@ -11,8 +11,11 @@ CREATE TABLE IF NOT EXISTS contact_leads (
   email TEXT NOT NULL,
   message TEXT NOT NULL,
   is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  delivered_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE contact_leads ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS contact_leads_read_created_idx
   ON contact_leads (is_read, created_at DESC);

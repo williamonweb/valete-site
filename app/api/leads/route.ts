@@ -33,7 +33,8 @@ export async function POST(request:Request){
 export async function GET(){
   try{
     await requireCmsAdmin();
-    const rows=await sql()`SELECT id,name,phone,email,message,CASE WHEN is_read THEN 1 ELSE 0 END AS "isRead",created_at AS "createdAt" FROM contact_leads ORDER BY created_at DESC LIMIT 200`;
+    await sql()`ALTER TABLE contact_leads ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ`;
+    const rows=await sql()`SELECT id,name,phone,email,message,CASE WHEN is_read THEN 1 ELSE 0 END AS "isRead",delivered_at AS "deliveredAt",created_at AS "createdAt" FROM contact_leads ORDER BY created_at DESC LIMIT 200`;
     return Response.json({leads:rows});
   }catch(error){
     const message=error instanceof Error?error.message:"ERROR";
