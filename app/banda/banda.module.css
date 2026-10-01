@@ -6,6 +6,26 @@
   border-left: 1px solid #303030;
 }
 
+.bio {
+  margin-top: 30px;
+  color: #bbb;
+  font-size: 1.02rem;
+  line-height: 1.72;
+}
+
+.bio p {
+  margin: 0 0 22px;
+}
+
+.bio p:last-child {
+  margin-bottom: 0;
+}
+
+.bio strong {
+  color: #fff;
+  font-weight: 900;
+}
+
 .facts > div {
   min-width: 0;
   padding: 16px 17px;
